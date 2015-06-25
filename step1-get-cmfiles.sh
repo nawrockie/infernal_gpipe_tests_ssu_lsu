@@ -18,8 +18,8 @@ gunzip Rfam.cm.gz
 # 2. Use cmfetch to fetch the SSU and LSU models:
 #
 #  First get all of the SSU and LSU models into one file:
-/usr/local/infernal/1.1.1/bin/cmstat Rfam.cm | grep SSU > ssu-and-lsu.list
-/usr/local/infernal/1.1.1/bin/cmstat Rfam.cm | grep LSU >> ssu-and-lsu.list
+/usr/local/infernal/1.1.1/bin/cmstat Rfam.cm | grep SSU | awk '{ print $2 }' > ssu-and-lsu.list
+/usr/local/infernal/1.1.1/bin/cmstat Rfam.cm | grep LSU | awk '{ print $2 }' >> ssu-and-lsu.list
 /usr/local/infernal/1.1.1/bin/cmfetch -f Rfam.cm ssu-and-lsu.list > ssu-and-lsu-all.cm 
 #
 #  and make single model files for SSU and LSU archaea and bacteria models
