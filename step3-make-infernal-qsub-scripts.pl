@@ -7,8 +7,8 @@
 # three Infernal 1.1.1 cmsearch commands for each genome.
 # Each command will use a different CM file:
 # M1) ssu-and-lsu-all.cm
-# M2) ssu.arc.cm OR ssu.bac.cm (depending on cmdline arg value 'arc' or 'bac')
-# M3) lsu.arc.cm OR lsu.bac.cm (depending on cmdline arg value 'arc' or 'bac')
+# M2) ssu.arc.cm OR ssu.bac.cm (depending on name of genome list provided on cmdline)
+# M3) lsu.arc.cm OR lsu.bac.cm (depending on name of genome list provided on cmdline)
 # 
 # Input file: multiple lines of two tab-delimited fields:
 #  <genome-key> <genome-fasta-file>
@@ -18,73 +18,70 @@
 use strict;
 use warnings;
 
-my $usage = "perl step3-make-infernal-qsub-scripts.pl < \n";
-$usage .= "\t<step1 output>\n";
-$usage .= "\t<Rfam 11 output dir (will be created, must not already exist)>\n";
-$usage .= "\t<Rfam 12 output dir (will be created, must not already exist)>\n";
+my $usage = "perl step3-make-infernal-qsub-scripts.pl\n";
+$usage .= "\t<genome list output from step1 (either arc.r25.genome.list or bac.r50.genome.list)>\n";
+$usage .= "\t<output dir name (will be created, must not already exist>\n";
 
-if(scalar(@ARGV) != 3) { 
+if(scalar(@ARGV) != 2) { 
   die $usage;
 }
-my ($infile, $out11dir, $out12dir) = (@ARGV);
+my ($infile, $outdir) = (@ARGV);
+my $do_arc = 0;
+my $do_bac = 0;
 
+# make sure our input file begins with 'arc.' or 'bac.'
+if   ($infile =~ m/^arc\./) { $do_arc = 1; $do_bac = 0; }
+elsif($infile =~ m/^bac\./) { $do_arc = 0; $do_bac = 1; }
+else { die "ERROR input genome list file must begin with 'arc.' or 'bac.', $infile does not."; }
+  
 # hard-coded paths
-my $idir      = "/usr/local/infernal/1.0/bin";
-my $cm11dir   = "./";
-my $cm12dir   = "./";
-my @cm11fileA = ($cm11dir . "RF00001.rfam11.i1p0.cm", $cm11dir . "GPIPE.29.rfam11.i1p0.cm");
-my @cm12fileA = ($cm12dir . "RF00001.rfam12.i1p0.cm", $cm12dir . "GPIPE.29.rfam12.i1p0.cm");
-my @cmkeyA    = ("5S", "29");
-my @cmoptsA   = ("-T 40", "--ga");
+my $idir    = "/usr/local/infernal/1.1.1/bin";
+my @cmfileA = ("ssu-and-lsu-all.cm");
+if($do_arc) { 
+  push(@cmfileA, "ssu-arc.cm"); 
+  push(@cmfileA, "lsu-arc.cm"); 
+}
+elsif($do_bac) { 
+  push(@cmfileA, "ssu-bac.cm"); 
+  push(@cmfileA, "lsu-bac.cm"); 
+}
+
+my $cmopts = "--cut_ga --rfam --cpu 0 --nohmmonly";
+
 # ensure our CM files exist
-foreach my $cmfile (@cm11fileA, @cm12fileA) { 
+foreach my $cmfile (@cmfileA) { 
   if(! -s $cmfile) { die "ERROR $cmfile does not exist"; }
 }
 
-if(-d $out11dir) { die "ERROR directory named $out11dir already exists. Remove it and try again, or pick a different output dir name"; }
-if(-e $out11dir) { die "ERROR file named $out11dir already exists. Remove it and try again, or pick a different output dir name"; }
-if(-d $out12dir) { die "ERROR directory named $out12dir already exists. Remove it and try again, or pick a different output dir name"; }
-if(-e $out12dir) { die "ERROR file named $out12dir already exists. Remove it and try again, or pick a different output dir name"; }
+if(-d $outdir) { die "ERROR directory named $outdir already exists. Remove it and try again, or pick a different output dir name"; }
 
 open(IN, $infile) || die "ERROR unable to open file $infile for reading"; 
 
-RunCommand("mkdir $out11dir");
-RunCommand("mkdir $out12dir");
+RunCommand("mkdir $outdir");
 
 while(my $line = <IN>) { 
+  # Example line:
+  # Nanoarchaeota_archaeon_SCGC_AAA011-D5	/panfs/pan1.be-md.ncbi.nlm.nih.gov/gpipe/bacterial_pipeline/data19/Nanoarchaeota_archaeon_SCGC_AAA011-D5/696928-DENOVO-20150227-1757.1483344/output/bacterial_annot/ASMP01.annotation.nucleotide.fa
+
   chomp $line;
   my ($fakey, $fafile) = split(/\t/, $line);
   if(! -e $fafile) { die "ERROR fasta file $fafile for key $fakey does not exist"; }
 
-  for(my $c = 0; $c < scalar(@cmkeyA); $c++) { 
-    my $cmkey        = $cmkeyA[$c];
-    my $cmopts       = $cmoptsA[$c];
+  for(my $c = 0; $c < scalar(@cmfileA); $c++) { 
+    my $cmfile = $cmfileA[$c];
+    my $cmkey  = $cmfile;
+    $cmkey =~ s/\.cm$//;
 
-    my $cm11file     = $cm11fileA[$c];
-    my $job11name    = "J11." . $fakey . "." . $cmkey;
-    my $root11       = $out11dir . "/" . $fakey . "." . $cmkey;
-    my $tblout11file = $root11 . ".tbl"; 
-    my $err11file    = $root11 . ".err"; 
-    my $time11file   = $root11 . ".time"; 
+    my $jobname    = "J" . $fakey . "." . $cmkey;
+    my $root       = $outdir . "/" . $fakey . "." . $cmkey;
+    my $tbloutfile = $root . ".tbl"; 
+    my $errfile    = $root . ".err"; 
+    my $timefile   = $root . ".time"; 
 
-    # Rfam 11 job:
     # use /usr/bin/time to time the execution time
     # don't save stdout
     # 144000 seconds is 40 hours
-    printf("qsub -N $job11name -b y -v SGE_FACILITIES -P unified -S /bin/bash -cwd -V -j n -o /dev/null -e $err11file -l h_rt=144000,mem_free=8G,h_vmem=16G -m n \"/usr/bin/time $idir/cmsearch $cmopts --tabfile $tblout11file $cm11file $fafile > /dev/null 2> $time11file\"\n");
-
-    my $cm12file     = $cm12fileA[$c];
-    my $job12name    = "J12." . $fakey . "." . $cmkey;
-    my $root12       = $out12dir . "/" . $fakey . "." . $cmkey;
-    my $tblout12file = $root12 . ".tbl"; 
-    my $err12file    = $root12 . ".err"; 
-    my $time12file   = $root12 . ".time"; 
-
-    # Rfam 12 job:
-    # use /usr/bin/time to time the execution time
-    # don't save stdout
-    # 144000 seconds is 40 hours
-    printf("qsub -N $job12name -b y -v SGE_FACILITIES -P unified -S /bin/bash -cwd -V -j n -o /dev/null -e $err12file -l h_rt=144000,mem_free=8G,h_vmem=16G -m n \"/usr/bin/time $idir/cmsearch $cmopts --tabfile $tblout12file $cm12file $fafile > /dev/null 2> $time12file\"\n");
+    printf("qsub -N $jobname -b y -v SGE_FACILITIES -P unified -S /bin/bash -cwd -V -j n -o /dev/null -e $errfile -l h_rt=144000,mem_free=8G,h_vmem=16G -m n \"/usr/bin/time $idir/cmsearch $cmopts --tblout $tbloutfile $cmfile $fafile > /dev/null 2> $timefile\"\n");
   }
 }
 exit 0;
