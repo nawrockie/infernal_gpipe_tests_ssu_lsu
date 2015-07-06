@@ -23,8 +23,8 @@ gunzip Rfam.cm.gz
 /usr/local/infernal/1.1.1/bin/cmfetch -f Rfam.cm ssu-and-lsu.list > ssu-and-lsu-all.cm 
 #
 #  and make single model files for SSU and LSU archaea and bacteria models
-/usr/local/infernal/1.1.1/bin/cmfetch Rfam.cm SSU_rRNA_archaea  > ssu.arc.cm 
-/usr/local/infernal/1.1.1/bin/cmfetch Rfam.cm SSU_rRNA_bacteria > ssu.bac.cm 
-/usr/local/infernal/1.1.1/bin/cmfetch Rfam.cm LSU_rRNA_archaea  > lsu.arc.cm 
-/usr/local/infernal/1.1.1/bin/cmfetch Rfam.cm LSU_rRNA_bacteria > lsu.bac.cm 
+/usr/local/infernal/1.1.1/bin/cmfetch Rfam.cm SSU_rRNA_archaea  > ssu-arc.cm 
+/usr/local/infernal/1.1.1/bin/cmfetch Rfam.cm SSU_rRNA_bacteria > ssu-bac.cm 
+/usr/local/infernal/1.1.1/bin/cmfetch Rfam.cm LSU_rRNA_archaea  > lsu-arc.cm 
+/usr/local/infernal/1.1.1/bin/cmfetch Rfam.cm LSU_rRNA_bacteria > lsu-bac.cm 
 

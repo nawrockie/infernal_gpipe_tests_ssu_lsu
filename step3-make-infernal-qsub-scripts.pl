@@ -75,13 +75,14 @@ while(my $line = <IN>) {
     my $jobname    = "J" . $fakey . "." . $cmkey;
     my $root       = $outdir . "/" . $fakey . "." . $cmkey;
     my $tbloutfile = $root . ".tbl"; 
+    my $stdoutfile = $root . ".cmsearch"; 
     my $errfile    = $root . ".err"; 
     my $timefile   = $root . ".time"; 
 
     # use /usr/bin/time to time the execution time
     # don't save stdout
     # 144000 seconds is 40 hours
-    printf("qsub -N $jobname -b y -v SGE_FACILITIES -P unified -S /bin/bash -cwd -V -j n -o /dev/null -e $errfile -l h_rt=144000,mem_free=8G,h_vmem=16G -m n \"/usr/bin/time $idir/cmsearch $cmopts --tblout $tbloutfile $cmfile $fafile > /dev/null 2> $timefile\"\n");
+    printf("qsub -N $jobname -b y -v SGE_FACILITIES -P unified -S /bin/bash -cwd -V -j n -o /dev/null -e $errfile -l h_rt=144000,mem_free=8G,h_vmem=16G -m n \"/usr/bin/time $idir/cmsearch $cmopts --tblout $tbloutfile $cmfile $fafile > $stdoutfile 2> $timefile\"\n");
   }
 }
 exit 0;
