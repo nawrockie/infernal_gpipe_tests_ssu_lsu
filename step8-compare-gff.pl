@@ -10,13 +10,23 @@
 #
 use strict;
 use warnings;
+use Getopt::Long;
+
+my $do_reducenames = 1;
+my $do_leavenames  = 0;
 
 my $usage  = "perl step8-compare-gff.pl\n"; 
    $usage .= "\t<gff file 1>\n\t<file 1 key for naming output files for file 1>\n";
    $usage .= "\t<gff file 2>\n\t<file 2 key for naming output files for file 2>\n";
-   $usage .= "\t<third key for naming all output files>\n";
+   $usage .= "\t<third key for naming all output files>\n\n";
+   $usage .= "\tOPTIONS:\n";
+   $usage .= "\t -leavenames: do not reduce any sequence names of the form gi|\\d+|gb|\\S+\| to \\S+\n";
 
-if(scalar(@ARGV) != 3) { die $usage; }
+&GetOptions( "leavenames" => \$do_leavenames);
+
+if($do_leavenames) { $do_reducenames = 0; }
+
+if(scalar(@ARGV) != 5) { die $usage; }
 my ($gff1, $key1, $gff2, $key2, $key3) = (@ARGV);
 
 if(! -e $gff1) { die "ERROR no file $gff1 exists"; }
@@ -27,14 +37,13 @@ my %hits2_HA = (); # hash of hashes of arrays for gff file 2,  key: target seque
 my $nhits1   = 0;  # number of hits in $gff1 file
 my $nhits2   = 0;  # number of hits in $gff2 file
 
-parse_gff($gff1, \$nhits1, \%hits1_HA);
-parse_gff($gff2, \$nhits2, \%hits2_HA);
+parse_gff($gff1, \$nhits1, \%hits1_HA, $do_reducenames);
+parse_gff($gff2, \$nhits2, \%hits2_HA, $do_reducenames);
 
 printf("# GFF file 1:            $gff1\n");
 printf("# GFF file 1 output key: $key1\n");
 printf("# GFF file 2:            $gff2\n");
 printf("# GFF file 2 output key: $key2\n");
-printf("# GFF file 2: $gff2\n");
 printf("# Output Key: $key3\n");
 printf("#\n");
 
@@ -44,20 +53,20 @@ my $id_file   = $key3 . ".id";
 my $ol_file   = $key3 . ".ol";
 my $unq1_file = $key3 . ".unq1";
 my $unq2_file = $key3 . ".unq2";
-open($id_FH,     ">" . $id_file) || die "ERROR unable to open $id_file for writing"; 
-open($ol_FH,     ">" . $ol_file) || die "ERROR unable to open $ol_file for writing"; 
+open($id_FH,   ">" . $id_file)   || die "ERROR unable to open $id_file for writing"; 
+open($ol_FH,   ">" . $ol_file)   || die "ERROR unable to open $ol_file for writing"; 
 open($unq1_FH, ">" . $unq1_file) || die "ERROR unable to open $unq1_file for writing"; 
 open($unq2_FH, ">" . $unq2_file) || die "ERROR unable to open $unq2_file for writing"; 
 
-print $id_FH   ("# GFF file 1 (key: $key1): $gff1\n");
-print $ol_FH   ("# GFF file 1 (key: $key1): $gff1\n");
-print $unq1_FH ("# GFF file 1 (key: $key1): $gff1\n");
-print $unq2_FH ("# GFF file 1 (key: $key1): $gff1\n");
+printf $id_FH   ("# GFF file 1 (key: %10s): $gff1\n", $key1);
+printf $ol_FH   ("# GFF file 1 (key: %10s): $gff1\n", $key1);
+printf $unq1_FH ("# GFF file 1 (key: %10s): $gff1\n", $key1);
+printf $unq2_FH ("# GFF file 1 (key: %10s): $gff1\n", $key1);
 
-print $id_FH   ("# GFF file 2 (key: $key2): $gff2\n");
-print $ol_FH   ("# GFF file 2 (key: $key2): $gff2\n");
-print $unq1_FH ("# GFF file 2 (key: $key2): $gff2\n");
-print $unq2_FH ("# GFF file 2 (key: $key2): $gff2\n");
+printf $id_FH   ("# GFF file 2 (key: %10s): $gff2\n", $key2);
+printf $ol_FH   ("# GFF file 2 (key: %10s): $gff2\n", $key2);
+printf $unq1_FH ("# GFF file 2 (key: %10s): $gff2\n", $key2);
+printf $unq2_FH ("# GFF file 2 (key: %10s): $gff2\n", $key2);
 
 print $id_FH   ("# Key3: $key3\n");
 print $ol_FH   ("# Key3: $key3\n");
@@ -71,6 +80,7 @@ print $unq2_FH ("# Hits in GFF file 2 ($key2) but not in GFF file 1 ($key1)\n");
 
 my $header_line = sprintf("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
                           "sequence-name", "number-nt-overlap", 
+                          "1-fract-overlap", "2-fract-overlap",
                           "1-start", "1-end", "1-strand",
                           "2-start", "2-end", "2-strand");
 print $id_FH $header_line;
@@ -133,13 +143,13 @@ printf("#%12s  %12s  %12s  %12s  %12s  %12s\n",
        "------------",
        "------------");
 
-printf("%-25s  %12d  %12d  %12d  %12d  %12d  %12d\n", $nhits1, $nhits2, $nid, $nol, $nunq1, $nunq2);
+printf(" %12d  %12d  %12d  %12d  %12d  %12d\n", $nhits1, $nhits2, $nid, $nol, $nunq1, $nunq2);
 
 printf("#\n");
-printf("# Output file with list of identical hits:             %-30s\n", $id_file);
-printf("# Output file with list of overlapping hits:           %-30s\n", $ol_file);
-printf("# Output file with list of Infernal 1.0   unique hits: %-30s\n", $unq1_file);
-printf("# Output file with list of Infernal 1.1.1 unique hits: %-30s\n", $unq2_file);
+printf("# Output file with list of identical hits:                    %-30s\n", $id_file);
+printf("# Output file with list of overlapping hits:                  %-30s\n", $ol_file);
+printf("# Output file with list of GFF file 1 %-10s unique hits: %-30s\n", $key1, $unq1_file);
+printf("# Output file with list of GFF file 2 %-10s unique hits: %-30s\n", $key2, $unq2_file);
 exit 0;
 
 #############
@@ -147,44 +157,39 @@ exit 0;
 #############
 
 # Subroutine: parse_gff()
-# Args:       $gff_file:  GFF file to parse
-#             $nhits_HR:  ref to hash; key: "accession:name", value: number of hits
-#             $hits_HHAR: ref to 2d hash of arrays we will fill with hit info from gff
+# Args:       $gff_file:        GFF file to parse
+#             $nhits_R:         ref to scalar: number of hits
+#             $hits_HAR:        ref to hash of arrays we will fill with hit info from gff
+#             $do_reducenames:  '1' to reduce names of the form gi|\d+|gb|\S+| to \S+, '0' not to
 #
 # Returns:    number of hits read from the file
 # Dies:       if GFF file is in unexpected format
 
 sub parse_gff {
-  if(scalar(@_) != 3) { die "ERROR parse_gff() entered with wrong number of input args"; }
+  if(scalar(@_) != 4) { die "ERROR parse_gff() entered with wrong number of input args"; }
 
-  my ($gff_file, $nhits_HR, $hits_HHAR) = @_; # info for a hit from hits1_HHAR
+  my ($gff_file, $nhits_R, $hits_HAR, $do_reducenames) = @_; 
 
-  my ($name, $accn, $evalue, $accn_name);
-
+  $$nhits_R = 0;
   open(GFF, $gff_file) || die "ERROR unable to open $gff_file for reading";
   while(my $line = <GFF>) { 
     if($line !~ m/^\#/) { 
       chomp $line;
-      #gi|687371309|dbj|BBLU01000025.1|	cmsearch-1.0	rna	22	138	91.30	-	.	gb_key=5S_rRNA;rfam_acc=RF00001;evalue=6.65e-20
-      my @elA = split(/\s+/, $line);
-      if(scalar(@elA) != 9) { die "ERROR unable to parse GFF file $gff_file line $line"; }
-      my ($seq, $start, $end, $score, $strand, $extra) = ($elA[0], $elA[3], $elA[4], $elA[5], $elA[6], $elA[8]);
-      if($extra =~ /gb\_key\=(\S+)\;rfam\_acc\=(RF\d+)\;evalue\=(\S+)/) { 
-        ($name, $accn, $evalue) = ($1, $2, $3);
-        $accn_name = "$accn:$name";
-        $nhits_HR->{$accn_name}++;
+      #AWOG01000036.1	Genbank	rRNA	531	2002	.	+	.	ID=rna24;Parent=gene1175;gbkey=rRNA;product=16S ribosomal RNA
+      my @elA = split(/\t+/, $line);
+      if(scalar(@elA) != 9) { die "ERROR unable to parse (1) GFF file $gff_file line $line"; }
+      my ($seq, $start, $end, $strand) = ($elA[0], $elA[3], $elA[4], $elA[6]);
+      if($do_reducenames) { 
+        if($seq =~ /^gi\|\d+\|gb\|(\S+)\|/) { 
+          $seq = $1;
+        }
       }
-      else { 
-        die ("ERROR unable to parse (2) GFF file $gff_file line $line");
+      $$nhits_R++;
+      if(! exists ($hits_HAR->{$seq})) { 
+        @{$hits_HAR->{$seq}} = ();
       }
-      if(! exists ($hits_HHAR->{$accn_name})) { 
-        %{$hits_HHAR->{$accn_name}} = ();
-      }
-      if(! exists ($hits_HHAR->{$accn_name}{$seq})) { 
-        @{$hits_HHAR->{$accn_name}{$seq}} = ();
-      }
-      my $value = $start . ":" . $end . ":" . $strand . ":" . $score . ":" . $evalue;
-      push(@{$hits_HHAR->{$accn_name}{$seq}}, $value);
+      my $value = $start . ":" . $end . ":" . $strand;
+      push(@{$hits_HAR->{$seq}}, $value);
     }
   }
   close(GFF);
@@ -272,8 +277,10 @@ sub do_and_print_comparisons {
               # keep track of size and score of overlap
               if($nres_overlap > $max_nres_overlap) { 
                 # we found a 'better' (longer) overlap, rewrite $ol_toprint
-                $ol_toprint = sprintf("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
+                $ol_toprint = sprintf("%s\t%s\t%6.4f\t%6.4f\t%s\t%s\t%s\t%s\t%s\t%s\n",
                                       $seq, $nres_overlap, 
+                                      $nres_overlap / ($end1-$start1+1),
+                                      $nres_overlap / ($end2-$start2+1),
                                       $start1, $end1, $strand1,
                                       $start2, $end2, $strand2);
                 $max_nres_overlap = $nres_overlap;
