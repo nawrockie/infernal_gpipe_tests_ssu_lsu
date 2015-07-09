@@ -2,11 +2,12 @@
 # EPN, Mon Jul  6 14:54:32 2015
 # step8-compare-gff.pl
 # 
-# Compare two gff files. Create 4 output files:
-# 1. <key3>.id:     identical hits found by same model in both GFF files, same coordinates and strand
-# 2. <key3>.ol:     overlapping hits found by same model in both GFF files, same strand
-# 3. <key3>.unq<key1>: annotation found in gff file 1, for which no annotation in file 2 overlaps 
-# 4. <key3>.unq<key2>: annotation found in gff file 2, for which no annotation in file 1 overlaps
+# Compare two gff files. Create 5 output files:
+# 1. <key3>.id:   identical hits in both GFF files, same coordinates and strand
+# 2. <key3>.ol1:  overlapping hits in both GFF files, with each hit in GFF1 overlapping with at most 1 hit in GFF2
+# 3. <key3>.ol2:  overlapping hits in both GFF files, with each hit in GFF2 overlapping with at most 1 hit in GFF1
+# 4. <key3>.unq1: annotation found in gff file 1, for which no annotation in file 2 overlaps 
+# 5. <key3>.unq2: annotation found in gff file 2, for which no annotation in file 1 overlaps
 #
 use strict;
 use warnings;
@@ -50,43 +51,62 @@ printf("# Output Key: $key3\n");
 printf("#\n");
 
 # open output file handles and print column headers
-my ($id_FH, $ol_FH, $unq1_FH, $unq2_FH);
-my $id_file   = $key3 . ".id";
-my $ol_file   = $key3 . ".ol";
-my $unq1_file = $key3 . ".unq1";
-my $unq2_file = $key3 . ".unq2";
+my ($id_FH, $ol1_FH, $ol2_FH, $unq1_FH, $unq2_FH);
+my $id_file    = $key3 . ".id";
+my $ol1_file   = $key3 . ".ol1";
+my $ol2_file   = $key3 . ".ol2";
+my $unq1_file  = $key3 . ".unq1";
+my $unq2_file  = $key3 . ".unq2";
 open($id_FH,   ">" . $id_file)   || die "ERROR unable to open $id_file for writing"; 
-open($ol_FH,   ">" . $ol_file)   || die "ERROR unable to open $ol_file for writing"; 
+open($ol1_FH,  ">" . $ol1_file)  || die "ERROR unable to open $ol1_file for writing"; 
+open($ol2_FH,  ">" . $ol2_file)  || die "ERROR unable to open $ol2_file for writing"; 
 open($unq1_FH, ">" . $unq1_file) || die "ERROR unable to open $unq1_file for writing"; 
 open($unq2_FH, ">" . $unq2_file) || die "ERROR unable to open $unq2_file for writing"; 
 
 printf $id_FH   ("# GFF file 1 (key: %10s): $gff1\n", $key1);
-printf $ol_FH   ("# GFF file 1 (key: %10s): $gff1\n", $key1);
+printf $ol1_FH  ("# GFF file 1 (key: %10s): $gff1\n", $key1);
+printf $ol2_FH  ("# GFF file 1 (key: %10s): $gff1\n", $key1);
 printf $unq1_FH ("# GFF file 1 (key: %10s): $gff1\n", $key1);
 printf $unq2_FH ("# GFF file 1 (key: %10s): $gff1\n", $key1);
 
 printf $id_FH   ("# GFF file 2 (key: %10s): $gff2\n", $key2);
-printf $ol_FH   ("# GFF file 2 (key: %10s): $gff2\n", $key2);
+printf $ol1_FH  ("# GFF file 2 (key: %10s): $gff2\n", $key2);
+printf $ol2_FH  ("# GFF file 2 (key: %10s): $gff2\n", $key2);
 printf $unq1_FH ("# GFF file 2 (key: %10s): $gff2\n", $key2);
 printf $unq2_FH ("# GFF file 2 (key: %10s): $gff2\n", $key2);
 
 print $id_FH   ("# Key3: $key3\n");
-print $ol_FH   ("# Key3: $key3\n");
+print $ol1_FH  ("# Key3: $key3\n");
+print $ol2_FH  ("# Key3: $key3\n");
 print $unq1_FH ("# Key3: $key3\n");
 print $unq2_FH ("# Key3: $key3\n");
 
 print $id_FH   ("# Hits in both GFF files with identical coordinates and strand\n");
-print $ol_FH   ("# Hits in both GFF files that overlap and are on same strand and overlap but which are not identical coordinates\n");
+
+print $ol1_FH  ("# Hits in both GFF files that overlap and are on same strand and overlap but which do not have identical coordinates\n");
+print $ol1_FH  ("# Each hit in GFF1 is allowed to overlap with at most 1 hit in GFF2 (*THIS MAKES THIS FILE DIFFERENT THAN THE\n");
+print $ol1_FH  ("# OTHER OVERLAP FILE* ($ol2_file)\n");
+
+print $ol2_FH  ("# Hits in both GFF files that overlap and are on same strand and overlap but which do not have identical coordinates\n");
+print $ol2_FH  ("# Each hit in GFF2 is allowed to overlap with at most 1 hit in GFF1 (*THIS MAKES THIS FILE DIFFERENT THAN THE\n");
+print $ol2_FH  ("# OTHER OVERLAP FILE* ($ol1_file)\n");
+
 print $unq1_FH ("# Hits in GFF file 1 ($key1) but not in GFF file 2 ($key2)\n");
 print $unq2_FH ("# Hits in GFF file 2 ($key2) but not in GFF file 1 ($key1)\n");
 
-my $header_line = sprintf("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
+my $header_line = sprintf("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
                           "#sequence-name", "number-nt-overlap", 
                           "1-fract-overlap", "2-fract-overlap",
                           "1-start", "1-end", "1-strand",
                           "2-start", "2-end", "2-strand");
+my $header_line2 = sprintf("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
+                          "#sequence-name", "number-nt-overlap", 
+                          "2-fract-overlap", "1-fract-overlap",
+                          "2-start", "2-end", "2-strand",
+                          "1-start", "1-end", "1-strand");
 print $id_FH $header_line;
-print $ol_FH $header_line;
+print $ol1_FH $header_line;
+print $ol2_FH $header_line2;
 
 printf $unq1_FH ("%s\t%s\t%s\t%s\t%s\n",
                  "#sequence-name", "number-nt-overlap", 
@@ -111,26 +131,29 @@ printf $unq2_FH ("%s\t%s\t%s\t%s\t%s\n",
 # overlapping region, to the overlap file $key3.ol.
 # 
 my $nid     = 0; # number of identical hits
-my $nol     = 0; # number of overlapping hits
-my $nntol   = 0; # number of overlapping nucleotides
+my $nol1    = 0; # number of overlapping hits, allowing each hit in GFF1 to overlap with at most 1 in GFF2
+my $nol2    = 0; # number of overlapping hits, allowing each hit in GFF2 to overlap with at most 1 in GFF1
+my $nntol1  = 0; # number of overlapping nucleotides in the $nol1 overlapping hits
+my $nntol2  = 0; # number of overlapping nucleotides in the $nol2 overlapping hits
 my $nunq1   = 0; # number of hits in GFF1 that have 0 overlaps in GFF2
 my $nunq2   = 0; # number of hits in GFF2 that have 0 overlaps in GFF1
 my $nntunq1 = 0; # number of nts in GFF1 unique hits
 my $nntunq2 = 0; # number of nts in GFF2 unique hits
 
 do_and_print_comparisons(\%hits1_HA, \%hits2_HA, \$nid, 
-                         \$nol,   \$nntol, 
+                         \$nol1,   \$nntol1, 
                          \$nunq1, \$nntunq1,
-                         $id_FH, $ol_FH, $unq1_FH);
+                         $id_FH, $ol1_FH, $unq1_FH);
 do_and_print_comparisons(\%hits2_HA, \%hits1_HA, undef, 
-                         undef, undef,
+                         \$nol2, \$nntol2,
                          \$nunq2, \$nntunq2, 
-                         undef,  undef, $unq2_FH); 
+                         undef,  $ol2_FH, $unq2_FH); 
 # two undefs in second call are so we don't print identical hits and overlapping hits again,
 # we already did that in the first call to print_comparisons
 
 close($id_FH);
-close($ol_FH);
+close($ol1_FH);
+close($ol2_FH);
 close($unq1_FH);
 close($unq2_FH);
 
@@ -144,19 +167,20 @@ printf("%-5s  %-12s  %9d  %9d  %9.1f  %9d  %9d  %9d  %9.4f  %9d  %9d  %9.1f\n",
        "GFF1", $key1, 
        $nhits1, $nnt1,     ($nhits1 > 0)  ? $nnt1/$nhits1   : 0, 
        $nid, 
-       $nol, $nntol, $nntol/($nnt1-$nntunq1),
+       $nol1, $nntol1, $nntol1/($nnt1-$nntunq1),
        $nunq1, $nntunq1,   ($nntunq1 > 0) ? $nntunq1/$nunq1 : 0);
        
 printf("%-5s  %-12s  %9d  %9d  %9.1f  %9d  %9d  %9d  %9.4f  %9d  %9d  %9.1f\n",
        "GFF2", $key2,
        $nhits2, $nnt2,     ($nhits2 > 0)  ? $nnt2/$nhits2   : 0, 
        $nid, 
-       $nol, $nntol, $nntol/($nnt2-$nntunq2),
+       $nol2, $nntol2, $nntol2/($nnt2-$nntunq2),
        $nunq2, $nntunq2,   ($nntunq2 > 0) ? $nntunq2/$nunq2 : 0);
 
 printf("#\n");
 printf("# Output file with list of identical hits:                      %-30s\n", $id_file);
-printf("# Output file with list of overlapping hits:                    %-30s\n", $ol_file);
+printf("# Output file with list of overlapping hits (GFF1 hits first):  %-30s\n", $ol1_file);
+printf("# Output file with list of overlapping hits (GFF2 hits first):  %-30s\n", $ol2_file);
 printf("# Output file with list of GFF file 1 %-12s unique hits: %-30s\n", $key1, $unq1_file);
 printf("# Output file with list of GFF file 2 %-12s unique hits: %-30s\n", $key2, $unq2_file);
 exit 0;
@@ -217,7 +241,7 @@ sub parse_gff {
     }
   }
   close(GFF);
-  
+
   return;
 }
 
