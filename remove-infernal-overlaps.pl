@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-my $usage = "grep -v ^\# <tabfile> | sort -k16,16g -k15,15rn | perl remove-overlaps.pl";
+my $usage = "grep -v ^\# <cmsearch --tblout file> | sort -k16,16g -k15,15rn | perl remove-infernal-overlaps.pl";
 
 my $prv_evalue = undef;
 my %hits_HHA = ();
@@ -18,6 +18,7 @@ while(my $line = <>) {
     $stop = $tmp;
   }
   if(defined $prv_evalue && $evalue < $prv_evalue) { die "ERROR not sorted by E-value ($evalue < $prv_evalue)"; }
+  $prv_evalue = $evalue;
   my $found_overlap = 0;
   if(exists $hits_HHA{$target}) { 
     if(exists $hits_HHA{$target}{$strand}) { 

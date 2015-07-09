@@ -30,7 +30,6 @@ elsif($infile =~ m/^bac\./) { $do_arc = 0; $do_bac = 1; }
 else { die "ERROR input genome list file must begin with 'arc.' or 'bac.', $infile does not."; }
   
 # hard-coded paths
-my $idir    = "/usr/local/infernal/1.1.1/bin";
 my @cmfileA = ("ssu-and-lsu-all.cm");
 if($do_arc) { 
   push(@cmfileA, "ssu-arc.cm"); 
@@ -68,7 +67,7 @@ while(my $line = <IN>) {
 
   
   if(! -e $tbloutfile) { die "ERROR $tbloutfile does not exist"; }
-  my $cmd = "grep -v \\# $tbloutfile | sort -k16,16g -k15,15rn | perl remove-overlaps.pl > $deoverlapped_tbloutfile";
+  my $cmd = "grep -v \\# $tbloutfile | sort -k16,16g -k15,15rn | perl remove-infernal-overlaps.pl > $deoverlapped_tbloutfile";
   # print("Running $cmd ... ");
   printf("Removing overlaps from %-85s with remove-overlaps.pl ... ", $tbloutfile);
   RunCommand($cmd);

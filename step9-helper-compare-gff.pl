@@ -200,7 +200,20 @@ sub parse_gff {
         @{$hits_HAR->{$seq}} = ();
       }
       my $value = $start . ":" . $end . ":" . $strand;
-      push(@{$hits_HAR->{$seq}}, $value);
+
+      my $already_exists = 0;
+      # make sure we don't already have this same hit, I've seen this happen in RNAmmer, I think it's a bug:
+      # the one case I've seen:
+      # gi|219672119|gb|ABJV02000001.1| searching for bacterial ssu
+      # this is the sequence genome file: /panfs/pan1.be-md.ncbi.nlm.nih.gov/gpipe/bacterial_pipeline/data19/Borrelia_garinii_PBr/444578-DENOVO-20150207-1527.1456614/output/bacterial_annot/ABJV02.annotation.nucleotide.fa
+      for(my $z = 0; $z < scalar(@{$hits_HAR->{$seq}}); $z++) { 
+        if($hits_HAR->{$seq}[$z] eq $value) { 
+          $already_exists = 1;
+        }
+      }
+      if(! $already_exists) { 
+        push(@{$hits_HAR->{$seq}}, $value);
+      }
     }
   }
   close(GFF);
