@@ -20,7 +20,7 @@ my $usage  = "perl step8-compare-gff.pl\n";
    $usage .= "\t<gff file 2>\n\t<file 2 key for naming output files for file 2>\n";
    $usage .= "\t<third key for naming all output files>\n\n";
    $usage .= "\tOPTIONS:\n";
-   $usage .= "\t -leavenames: do not reduce any sequence names of the form gi|\\d+|gb|\\S+\| to \\S+\n";
+   $usage .= "\t -leavenames: do not reduce any sequence names of the form gi|\\d+|\\w+|\\S+\| to \\S+\n";
 
 &GetOptions( "leavenames" => \$do_leavenames);
 
@@ -36,9 +36,11 @@ my %hits1_HA = (); # hash of hashes of arrays for gff file 1,  key: target seque
 my %hits2_HA = (); # hash of hashes of arrays for gff file 2,  key: target sequence name, value: array of "<start>.<end>.<strand>"
 my $nhits1   = 0;  # number of hits in $gff1 file
 my $nhits2   = 0;  # number of hits in $gff2 file
+my $nnt1     = 0;  # number of nucleotides in all hits in $gff1 file
+my $nnt2     = 0;  # number of nucleotides in all hits in $gff2 file
 
-parse_gff($gff1, \$nhits1, \%hits1_HA, $do_reducenames);
-parse_gff($gff2, \$nhits2, \%hits2_HA, $do_reducenames);
+parse_gff($gff1, \$nhits1, \$nnt1, \%hits1_HA, $do_reducenames);
+parse_gff($gff2, \$nhits2, \$nnt2, \%hits2_HA, $do_reducenames);
 
 printf("# GFF file 1:            $gff1\n");
 printf("# GFF file 1 output key: $key1\n");
@@ -79,7 +81,7 @@ print $unq1_FH ("# Hits in GFF file 1 ($key1) but not in GFF file 2 ($key2)\n");
 print $unq2_FH ("# Hits in GFF file 2 ($key2) but not in GFF file 1 ($key1)\n");
 
 my $header_line = sprintf("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
-                          "sequence-name", "number-nt-overlap", 
+                          "#sequence-name", "number-nt-overlap", 
                           "1-fract-overlap", "2-fract-overlap",
                           "1-start", "1-end", "1-strand",
                           "2-start", "2-end", "2-strand");
@@ -87,11 +89,11 @@ print $id_FH $header_line;
 print $ol_FH $header_line;
 
 printf $unq1_FH ("%s\t%s\t%s\t%s\t%s\n",
-                 "sequence-name", "number-nt-overlap", 
+                 "#sequence-name", "number-nt-overlap", 
                  "1-start", "1-end", "1-strand");
                    
 printf $unq2_FH ("%s\t%s\t%s\t%s\t%s\n",
-                 "sequence-name", "number-nt-overlap", 
+                 "#sequence-name", "number-nt-overlap", 
                  "2-start", "2-end", "2-strand");
                    
 # Do the comparison and create the output.
@@ -108,16 +110,21 @@ printf $unq2_FH ("%s\t%s\t%s\t%s\t%s\n",
 # we count this as 1 overlap, and output information on the 'best overlap', the longest
 # overlapping region, to the overlap file $key3.ol.
 # 
-my $nid   = 0; # number of identical hits
-my $nol   = 0; # number of overlapping hits
-my $nunq1 = 0; # number of hits in GFF1 that have 0 overlaps in GFF2
-my $nunq2 = 0; # number of hits in GFF2 that have 0 overlaps in GFF1
+my $nid     = 0; # number of identical hits
+my $nol     = 0; # number of overlapping hits
+my $nntol   = 0; # number of overlapping nucleotides
+my $nunq1   = 0; # number of hits in GFF1 that have 0 overlaps in GFF2
+my $nunq2   = 0; # number of hits in GFF2 that have 0 overlaps in GFF1
+my $nntunq1 = 0; # number of nts in GFF1 unique hits
+my $nntunq2 = 0; # number of nts in GFF2 unique hits
 
-do_and_print_comparisons(\%hits1_HA, \%hits2_HA, 
-                         \$nid, \$nol, \$nunq1,
+do_and_print_comparisons(\%hits1_HA, \%hits2_HA, \$nid, 
+                         \$nol,   \$nntol, 
+                         \$nunq1, \$nntunq1,
                          $id_FH, $ol_FH, $unq1_FH);
-do_and_print_comparisons(\%hits2_HA, \%hits1_HA,
-                         undef, undef, \$nunq2,
+do_and_print_comparisons(\%hits2_HA, \%hits1_HA, undef, 
+                         undef, undef,
+                         \$nunq2, \$nntunq2, 
                          undef,  undef, $unq2_FH); 
 # two undefs in second call are so we don't print identical hits and overlapping hits again,
 # we already did that in the first call to print_comparisons
@@ -128,28 +135,30 @@ close($unq1_FH);
 close($unq2_FH);
 
 # output tabular summary of comparison
-printf("#%12s  %12s  %12s  %12s  %12s  %12s\n", 
-       "GFF1-#hits",
-       "GFF2-#hits",
-       "#identical",
-       "#overlap",
-       "GFF1-#unique",
-       "GFF2-#unique");
-printf("#%12s  %12s  %12s  %12s  %12s  %12s\n", 
-       "------------",
-       "------------",
-       "------------",
-       "------------",
-       "------------",
-       "------------");
+printf("#%4s  %-12s  %9s  %9s  %9s  %9s  %9s  %9s  %9s  %9s  %9s  %9s\n", 
+       "file", "desc", "#hit-tot", "#nt-tot", "avgnt-tot", "#ident", "#hit-olp", "#nt-olp", "frct-olp", "#hit-unq", "#nt-unq", "avgnt-unq");
 
-printf(" %12d  %12d  %12d  %12d  %12d  %12d\n", $nhits1, $nhits2, $nid, $nol, $nunq1, $nunq2);
+printf("%5s  %12s  %9s  %9s  %9s  %9s  %9s  %9s  %9s  %9s  %9s  %9s\n", 
+       "#----", "------------", "---------", "---------", "---------", "---------", "---------", "---------", "---------", "---------", "---------", "---------");
+printf("%-5s  %-12s  %9d  %9d  %9.1f  %9d  %9d  %9d  %9.4f  %9d  %9d  %9.1f\n",
+       "GFF1", $key1, 
+       $nhits1, $nnt1,     ($nhits1 > 0)  ? $nnt1/$nhits1   : 0, 
+       $nid, 
+       $nol, $nntol, $nntol/($nnt1-$nntunq1),
+       $nunq1, $nntunq1,   ($nntunq1 > 0) ? $nntunq1/$nunq1 : 0);
+       
+printf("%-5s  %-12s  %9d  %9d  %9.1f  %9d  %9d  %9d  %9.4f  %9d  %9d  %9.1f\n",
+       "GFF2", $key2,
+       $nhits2, $nnt2,     ($nhits2 > 0)  ? $nnt2/$nhits2   : 0, 
+       $nid, 
+       $nol, $nntol, $nntol/($nnt2-$nntunq2),
+       $nunq2, $nntunq2,   ($nntunq2 > 0) ? $nntunq2/$nunq2 : 0);
 
 printf("#\n");
-printf("# Output file with list of identical hits:                    %-30s\n", $id_file);
-printf("# Output file with list of overlapping hits:                  %-30s\n", $ol_file);
-printf("# Output file with list of GFF file 1 %-10s unique hits: %-30s\n", $key1, $unq1_file);
-printf("# Output file with list of GFF file 2 %-10s unique hits: %-30s\n", $key2, $unq2_file);
+printf("# Output file with list of identical hits:                      %-30s\n", $id_file);
+printf("# Output file with list of overlapping hits:                    %-30s\n", $ol_file);
+printf("# Output file with list of GFF file 1 %-12s unique hits: %-30s\n", $key1, $unq1_file);
+printf("# Output file with list of GFF file 2 %-12s unique hits: %-30s\n", $key2, $unq2_file);
 exit 0;
 
 #############
@@ -159,16 +168,17 @@ exit 0;
 # Subroutine: parse_gff()
 # Args:       $gff_file:        GFF file to parse
 #             $nhits_R:         ref to scalar: number of hits
+#             $nnt_R:           ref to scalar: number of total nucleotides in all hits
 #             $hits_HAR:        ref to hash of arrays we will fill with hit info from gff
-#             $do_reducenames:  '1' to reduce names of the form gi|\d+|gb|\S+| to \S+, '0' not to
+#             $do_reducenames:  '1' to reduce names of the form gi|\d+|\w+|\S+| to \S+, '0' not to
 #
 # Returns:    number of hits read from the file
 # Dies:       if GFF file is in unexpected format
 
 sub parse_gff {
-  if(scalar(@_) != 4) { die "ERROR parse_gff() entered with wrong number of input args"; }
+  if(scalar(@_) != 5) { die "ERROR parse_gff() entered with wrong number of input args"; }
 
-  my ($gff_file, $nhits_R, $hits_HAR, $do_reducenames) = @_; 
+  my ($gff_file, $nhits_R, $nnt_R, $hits_HAR, $do_reducenames) = @_; 
 
   $$nhits_R = 0;
   open(GFF, $gff_file) || die "ERROR unable to open $gff_file for reading";
@@ -180,11 +190,12 @@ sub parse_gff {
       if(scalar(@elA) != 9) { die "ERROR unable to parse (1) GFF file $gff_file line $line"; }
       my ($seq, $start, $end, $strand) = ($elA[0], $elA[3], $elA[4], $elA[6]);
       if($do_reducenames) { 
-        if($seq =~ /^gi\|\d+\|gb\|(\S+)\|/) { 
+        if($seq =~ /^gi\|\d+\|\S+\|(\S+)\|/) { 
           $seq = $1;
         }
       }
       $$nhits_R++;
+      $$nnt_R += abs($start - $end) + 1;
       if(! exists ($hits_HAR->{$seq})) { 
         @{$hits_HAR->{$seq}} = ();
       }
@@ -200,12 +211,16 @@ sub parse_gff {
 # Subroutine: do_and_print_comparisions()
 # Args:       $hits1_HAR:  ref to hash of arrays with hit info from a gff file
 #             $hits2_HAR:  ref to hash of arrays with hit info from a gff file
-#             $nid_HR:     set here (if !undef); ref to scalar:
+#             $nid_R:      set here (if !undef); ref to scalar:
 #                          number of identical hits between hits1_HAR and hits2_HAR
-#             $nol_HR:     set here (if !undef); ref to scalar:
+#             $nol_R:      set here (if !undef); ref to scalar:
 #                          number of non-identical but overlapping hits between hits1_HAR and hits2_HAR
-#             $nunq_HR:    set here; ref to scalar:
+#             $nntol_R:    set here (if !undef); ref to scalar:
+#                          number of nucleotides in hits in hits1_HAR that overlap with a hit in hits2_HAR
+#             $nunq_R:     set here; ref to scalar:
 #                          number of hits in hits1_HAR with 0 overlapping hits in hits2_HAR
+#             $nntunq_R:   set here (if !undef); ref to scalar:
+#                          number of nucleotides in unique hits in hits1_HAR
 #             $id_FH:      file handle for printing info on identical hits, can be undef
 #                          to not print this info 
 #             $ol_FH:      file handle for printing info on overlapping non-identical hits, 
@@ -216,9 +231,9 @@ sub parse_gff {
 # Dies:       if we find an inconsistency in the gff files
 
 sub do_and_print_comparisons {
-  if(scalar(@_) != 8) { die "ERROR do_and_print_comparison() entered with wrong number of input args"; }
+  if(scalar(@_) != 10) { die "ERROR do_and_print_comparison() entered with wrong number of input args"; }
 
-  my ($hits1_HAR, $hits2_HAR, $nid_R, $nol_R, $nunq_R, $id_FH, $ol_FH, $unq_FH) = @_;
+  my ($hits1_HAR, $hits2_HAR, $nid_R, $nol_R, $nntol_R, $nunq_R, $nntunq_R, $id_FH, $ol_FH, $unq_FH) = @_;
 
   my ($start1, $end1, $strand1, $score1, $evalue1); # info for a hit from hits1_HHAR
   my ($start2, $end2, $strand2, $score2, $evalue2); # info for a hit from hits2_HHAR
@@ -274,7 +289,7 @@ sub do_and_print_comparisons {
             if($nres_overlap > 0) { # overlap, but not identical
               if($found_id) { die "ERROR found an overlapping hit and an identical hit to $hits1_HAR->{$seq}[$i]"; }
               $found_ol = 1;
-              # keep track of size and score of overlap
+              # keep track of size of overlap
               if($nres_overlap > $max_nres_overlap) { 
                 # we found a 'better' (longer) overlap, rewrite $ol_toprint
                 $ol_toprint = sprintf("%s\t%s\t%6.4f\t%6.4f\t%s\t%s\t%s\t%s\t%s\t%s\n",
@@ -298,6 +313,9 @@ sub do_and_print_comparisons {
         if(defined $nunq_R) { 
           $$nunq_R++;
         }
+        if(defined $nntunq_R) { 
+          $$nntunq_R += abs($end1-$start1) + 1;
+        }
       }
       elsif($found_ol) { # found an overlap (and not an identity)
         if($found_id) { die "ERROR found an overlapping hit and an identical hit (case 2) to $hits1_HAR->{$seq}[$i]"; } 
@@ -307,6 +325,9 @@ sub do_and_print_comparisons {
         }
         if(defined $nol_R) { 
           $$nol_R++;
+        }
+        if(defined $nntol_R) { 
+          $$nntol_R += $max_nres_overlap;
         }
       }
     } # end of 'for($i = 0; $i < $nhits; $i++)'

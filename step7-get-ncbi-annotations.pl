@@ -79,8 +79,7 @@ while(my $line = <IN>) {
       # printf("nel: $nel\n"); for(my $z = 0; $z < $nel; $z++) { print "el $z $elA[$z]\n"; }
       if(scalar(@elA) != 9) { die "ERROR, not 8 tokens in line: $line"; }
       my ($accn, $db, $type, $start, $stop, $unknown1, $strand, $unknown2, $extra) = split(/\t/, $line);
-      if($line =~ m/rRNA/) { 
-
+      if($line =~ m/rRNA/ || $line =~ m/ribosomal RNA/) { # may want to also add '16S' and '23S'?
         if(($db eq "Genbank" || $db eq "DDBJ" || $db eq "EMBL") && $type eq "rRNA") { 
           # case 1: keeper; print to 'rRNA' file
           # example: 
@@ -95,13 +94,17 @@ while(my $line = <IN>) {
           # case 2: keeper; print to 'misc' file
           # example:
           # ASMP01000002.1	Genbank	region	130973	131145	.	+	.	ID=id34;Note=possible 23S ribosomal RNA but 16S or 23S rRNA prediction is too short;gbkey=misc_feature
+          # example *WITHOUT* 'rRNA' match
+          # CP007438.1	Genbank	region	1969925	1971208	.	-	.	ID=id25;Note=16S ribosomal RNA does not have good blast hits on one or both of the ends;gbkey=misc_feature
 
           my $did_keep = 0;
-          if   ($extra =~ m/Note=possible 16S ribosomal RNA but 16S or 23S rRNA prediction is too short/) { print GFFSM $line . "\n"; $did_keep = 1; }
-          elsif($extra =~ m/Note=possible 23S ribosomal RNA but 16S or 23S rRNA prediction is too short/) { print GFFLM $line . "\n"; $did_keep = 1; }
-          elsif($extra =~ m/Note=16S ribosomal RNA 16S or 23S rRNA prediction is too short/)              { print GFFSM $line . "\n"; $did_keep = 1; }
-          elsif($extra =~ m/Note=23S ribosomal RNA 16S or 23S rRNA prediction is too short/)              { print GFFLM $line . "\n"; $did_keep = 1; }
-          elsif($extra =~ m/Note=5S ribosomal RNA rRNA prediction is too short/)                          { ; $did_keep = 0; }
+          if   ($extra =~ m/Note=possible 16S ribosomal RNA but 16S or 23S rRNA prediction is too short/)     { print GFFSM $line . "\n"; $did_keep = 1; }
+          elsif($extra =~ m/Note=possible 23S ribosomal RNA but 16S or 23S rRNA prediction is too short/)     { print GFFLM $line . "\n"; $did_keep = 1; }
+          elsif($extra =~ m/Note=16S ribosomal RNA 16S or 23S rRNA prediction is too short/)                  { print GFFSM $line . "\n"; $did_keep = 1; }
+          elsif($extra =~ m/Note=23S ribosomal RNA 16S or 23S rRNA prediction is too short/)                  { print GFFLM $line . "\n"; $did_keep = 1; }
+          elsif($extra =~ m/Note=16S ribosomal RNA does not have good blast hits on one or both of the ends/) { print GFFSM $line . "\n"; $did_keep = 1; }
+          elsif($extra =~ m/Note=23S ribosomal RNA does not have good blast hits on one or both of the ends/) { print GFFLM $line . "\n"; $did_keep = 1; }
+          elsif($extra =~ m/Note=5S ribosomal RNA rRNA prediction is too short/)                              { ; $did_keep = 0; }
           else { die "ERROR unable to parse rRNA containing GFF line (2): $line"; }
           if($did_keep) { 
             push(@kept_start_A, $start);
