@@ -194,8 +194,6 @@ sub parse_gff {
           $seq = $1;
         }
       }
-      $$nhits_R++;
-      $$nnt_R += abs($start - $end) + 1;
       if(! exists ($hits_HAR->{$seq})) { 
         @{$hits_HAR->{$seq}} = ();
       }
@@ -212,6 +210,8 @@ sub parse_gff {
         }
       }
       if(! $already_exists) { 
+        $$nhits_R++;
+        $$nnt_R += abs($start - $end) + 1;
         push(@{$hits_HAR->{$seq}}, $value);
       }
     }
