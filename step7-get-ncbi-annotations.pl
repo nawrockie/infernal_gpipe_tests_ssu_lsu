@@ -98,13 +98,15 @@ while(my $line = <IN>) {
           # CP007438.1	Genbank	region	1969925	1971208	.	-	.	ID=id25;Note=16S ribosomal RNA does not have good blast hits on one or both of the ends;gbkey=misc_feature
 
           my $did_keep = 0;
-          if   ($extra =~ m/Note=possible 16S ribosomal RNA but 16S or 23S rRNA prediction is too short/)     { print GFFSM $line . "\n"; $did_keep = 1; }
-          elsif($extra =~ m/Note=possible 23S ribosomal RNA but 16S or 23S rRNA prediction is too short/)     { print GFFLM $line . "\n"; $did_keep = 1; }
-          elsif($extra =~ m/Note=16S ribosomal RNA 16S or 23S rRNA prediction is too short/)                  { print GFFSM $line . "\n"; $did_keep = 1; }
-          elsif($extra =~ m/Note=23S ribosomal RNA 16S or 23S rRNA prediction is too short/)                  { print GFFLM $line . "\n"; $did_keep = 1; }
-          elsif($extra =~ m/Note=16S ribosomal RNA does not have good blast hits on one or both of the ends/) { print GFFSM $line . "\n"; $did_keep = 1; }
-          elsif($extra =~ m/Note=23S ribosomal RNA does not have good blast hits on one or both of the ends/) { print GFFLM $line . "\n"; $did_keep = 1; }
-          elsif($extra =~ m/Note=5S ribosomal RNA rRNA prediction is too short/)                              { ; $did_keep = 0; }
+          if   ($extra =~ m/Note=possible 16S ribosomal RNA but 16S or 23S rRNA prediction is too short/)         { print GFFSM $line . "\n"; $did_keep = 1; }
+          elsif($extra =~ m/Note=possible 23S ribosomal RNA but 16S or 23S rRNA prediction is too short/)         { print GFFLM $line . "\n"; $did_keep = 1; }
+          elsif($extra =~ m/Note=16S ribosomal RNA 16S or 23S rRNA prediction is too short/)                      { print GFFSM $line . "\n"; $did_keep = 1; }
+          elsif($extra =~ m/Note=23S ribosomal RNA 16S or 23S rRNA prediction is too short/)                      { print GFFLM $line . "\n"; $did_keep = 1; }
+          elsif($extra =~ m/Note=16S ribosomal RNA does not have good blast hits on one or both of the ends/)     { print GFFSM $line . "\n"; $did_keep = 1; }
+          elsif($extra =~ m/Note=23S ribosomal RNA does not have good blast hits on one or both of the ends/)     { print GFFLM $line . "\n"; $did_keep = 1; }
+          elsif($extra =~ m/Note=possible 23S ribosomal RNA but does not have good blast hits on one or both of the ends/) { print GFFLM $line . "\n"; $did_keep = 1; }
+
+          elsif($extra =~ m/Note=5S ribosomal RNA rRNA prediction is too short/)                                  { ; $did_keep = 0; }
           else { die "ERROR unable to parse rRNA containing GFF line (2): $line"; }
           if($did_keep) { 
             push(@kept_start_A, $start);
@@ -121,7 +123,7 @@ while(my $line = <IN>) {
             die "ERROR found 'Genbank exon' rRNA line before a 'Genbank rRNA' rRNA line with same coordinates"; 
           }
         }
-        elsif($db eq "Protein Homology" && ($type eq "CDS" || $type eq "gene") && $extra =~ m/rRNA/) { 
+        elsif($db eq "Protein Homology" && ($type eq "CDS" || $type eq "gene") && ($extra =~ m/rRNA/ || $extra =~ m/ribosomal RNA/)) { 
           # case 4: NOT a keeper; protein homology that just happens to have rRNA in it's line, possibly a ribosomal protein
           # example: 
           # ASMP01000011.1	Protein Homology	CDS	3152	3275	.	-	1	ID=cds621;Parent=gene656;Name=WGS:ASMP:I749_RS03285;Note=L30 binds domain II of the 23S rRNA and the 5S rRNA%3B similar to eukaryotic protein L7;end_range=3275,.;gbkey=CDS;gene=rpl30p;partial=true;product=50S ribosomal protein L30;protein_id=WGS:ASMP:I749_RS03285;transl_table=11 at step7-get-ncbi-annotations.pl line 107, <GFFIN> line 1386.
