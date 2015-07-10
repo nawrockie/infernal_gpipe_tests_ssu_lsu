@@ -17,14 +17,14 @@ gunzip Rfam.cm.gz
 #
 # 2. Use cmfetch to fetch the SSU and LSU models:
 #
-#  First get all of the SSU and LSU models into one file:
-/usr/local/infernal/1.1.1/bin/cmstat Rfam.cm | grep SSU | awk '{ print $2 }' > ssu-and-lsu.list
-/usr/local/infernal/1.1.1/bin/cmstat Rfam.cm | grep LSU | awk '{ print $2 }' >> ssu-and-lsu.list
-/usr/local/infernal/1.1.1/bin/cmfetch -f Rfam.cm ssu-and-lsu.list > ssu-and-lsu-all.cm 
-#
-#  and make single model files for SSU and LSU archaea and bacteria models
+#  make single model files for SSU and LSU archaea and bacteria models
 /usr/local/infernal/1.1.1/bin/cmfetch Rfam.cm SSU_rRNA_archaea  > ssu-arc.cm 
 /usr/local/infernal/1.1.1/bin/cmfetch Rfam.cm SSU_rRNA_bacteria > ssu-bac.cm 
 /usr/local/infernal/1.1.1/bin/cmfetch Rfam.cm LSU_rRNA_archaea  > lsu-arc.cm 
 /usr/local/infernal/1.1.1/bin/cmfetch Rfam.cm LSU_rRNA_bacteria > lsu-bac.cm 
 
+# If we also wanted one model files with all SSU and LSU models:
+#/usr/local/infernal/1.1.1/bin/cmstat Rfam.cm | grep SSU | awk '{ print $2 }' > ssu-and-lsu.list
+#/usr/local/infernal/1.1.1/bin/cmstat Rfam.cm | grep LSU | awk '{ print $2 }' >> ssu-and-lsu.list
+#/usr/local/infernal/1.1.1/bin/cmfetch -f Rfam.cm ssu-and-lsu.list > ssu-and-lsu-all.cm 
+#
