@@ -7,8 +7,8 @@
 # validate NCBI vs Infernal (and vice versa) reciprocal comparisons:
 for dom in arc bac; do 
     for fam in ssu lsu; do
-        perl step10-helper-compare-reciprocal-compare-gff-output.pl ncbi-r-v-inf-i-$fam-$dom.compare-gff inf-i-v-ncbi-r-$fam-$dom.compare-gff > ncbi-r-v-inf-i-$fam-$dom.reciprocal-validation
-        perl step10-helper-compare-reciprocal-compare-gff-output.pl ncbi-b-v-inf-i-$fam-$dom.compare-gff inf-i-v-ncbi-b-$fam-$dom.compare-gff > ncbi-b-v-inf-i-$fam-$dom.reciprocal-validation
+        perl step10-helper-compare-reciprocal-compare-gff-output.pl ncbi-rRNA-v-infernal-$dom-$fam.compare-gff infernal-v-ncbi-rRNA-$dom-$fam.compare-gff > ncbi-rRNA-v-infernal-$dom-$fam.reciprocal-validation
+        perl step10-helper-compare-reciprocal-compare-gff-output.pl ncbi-rRNA-misc-v-infernal-$dom-$fam.compare-gff infernal-v-ncbi-rRNA-misc-$dom-$fam.compare-gff > ncbi-rRNA-misc-v-infernal-$dom-$fam.reciprocal-validation
     done
 done
 #
@@ -17,8 +17,8 @@ done
 # NCBI vs RNAmmer comparisons:
 for dom in arc bac; do 
     for fam in ssu lsu; do
-        perl step10-helper-compare-reciprocal-compare-gff-output.pl ncbi-r-v-inf-i-$fam-$dom.compare-gff rmr-i-v-ncbi-r-$fam-$dom.compare-gff > ncbi-r-v-rmr-i-$fam-$dom.reciprocal-validation
-        perl step10-helper-compare-reciprocal-compare-gff-output.pl ncbi-b-v-inf-i-$fam-$dom.compare-gff rmr-i-v-ncbi-b-$fam-$dom.compare-gff > ncbi-b-v-rmr-i-$fam-$dom.reciprocal-validation
+        perl step10-helper-compare-reciprocal-compare-gff-output.pl ncbi-rRNA-v-rnammer-$dom-$fam.compare-gff rnammer-v-ncbi-rRNA-$dom-$fam.compare-gff > ncbi-rRNA-v-rnammer-$dom-$fam.reciprocal-validation
+        perl step10-helper-compare-reciprocal-compare-gff-output.pl ncbi-rRNA-misc-v-rnammer-$dom-$fam.compare-gff rnammer-v-ncbi-rRNA-misc-$dom-$fam.compare-gff > ncbi-rRNA-misc-v-rnammer-$dom-$fam.reciprocal-validation
     done
 done
 # 
@@ -26,6 +26,6 @@ done
 # Infernal vs RNAmmer comparisons:
 for dom in arc bac; do 
     for fam in ssu lsu; do
-        perl step10-helper-compare-reciprocal-compare-gff-output.pl inf-i-v-rmr-i-$fam-$dom.compare-gff rmr-i-v-inf-i-$fam-$dom.compare.gff > inf-i-v-rmr-i-$fam-$dom.reciprocal-validation
+        perl step10-helper-compare-reciprocal-compare-gff-output.pl infernal-v-rnammer-$dom-$fam.compare-gff rnammer-v-infernal-$dom-$fam.compare-gff > infernal-v-rnammmer-$dom-$fam.reciprocal-validation
     done
 done
