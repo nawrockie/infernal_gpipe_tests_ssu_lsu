@@ -9,34 +9,30 @@ GitHub URL*: https://github.com/nawrockie/infernal_gpipe_tests_ssu_lsu.git
 * GitHub repo includes: scripts and files necessary to reproduce (must
   be on NCBI computing resources).
 
-To reproduce the tests discussed here, see 00TOREPRODUCE.txt in this
+***To reproduce the tests discussed here, see 00TOREPRODUCE.txt in this
 directory. 
 
 Sections of this file:
 - What I did to carry out the tests
+- Summary table and discussion of results
 - Explanation of the 4 prediction methods
-- List of files created for each pairwise comparison of methods:
+- List of files created for each pairwise comparison of methods
+- Idea for extended benchmark
 
-- Archaeal results 
-- Running time results
-- Conclusions
-- Recommendations
-- Further investigation of 18 hits to 'bacteria-no' models
-
+-------------------------------------------------------------------
 What I did to carry out the tests:
 
 A. Randomly selected 50 bacterial and 25 archaeal GPIPE-annotated
-   genomes from the 2851 genomes (it's unclear exactly how many are 
-   bacteria vs archae) in: 
+   genomes from the 2851 genomes in:
    /panfs/pan1.be-md.ncbi.nlm.nih.gov/gpipe/bacterial_pipeline/data19/
 
 B. For each genome, I obtained 4 sets of predictions for 16S SSU rRNA
    and 23S LSU rRNA genes in the genome sequences:
 
-   1. ncbi-rRNA      NCBI 16S or 23S rRNA features
-   2. ncbi-rRNA-misc NCBI 16S or 23S rRNA or region features 
-   3. infernal
-   4. RNAmmer
+   1. ncbi-rRNA      : NCBI 16S or 23S rRNA features
+   2. ncbi-rRNA-misc : NCBI 16S or 23S rRNA or region features 
+   3. infernal       : infernal 1.1.1 cmsearch and Rfam 12.0
+   4. RNAmmer        : RNAmmer 1.2 and included models
 
    (See the 'Explanation of the 4 prediction methods' section below
    for more information on these methods.)
@@ -50,9 +46,11 @@ C. Compared the predictions in GFF format for all pairwise combination
    methods' section' for more information on output files from the
    comparison.)
 
-D. Summarize all the results into a single tabular file. This step was
+D. Summarized all the results into a single tabular file. This step was
    done by the 'step9-wrapper-summarize-all-comparisons.sh' script
    which calls 'step9-helper-summarize-all-comparisons.pl'.
+
+See 00TOREPRODUCE for instructions on how to reproduce.
 
 --------------------------------------
 Summary table and discussion of results:
@@ -127,7 +125,7 @@ SSU or LSU first before looking for a full length hit. Many of the
 hits missed by RNAmmer are not full length and presumably lack these
 conserved regions, and are consequently are not found.
 
-I believe C1 is reason alone not to use RNAmmer as you'll lose a lot
+I believe this is reason alone not to use RNAmmer as you'll lose a lot
 of annotations of partial SSU/LSU sequences that lack the highly
 conserved sequences that RNAmmer relies on for detection.
 
@@ -177,7 +175,7 @@ feature='rRNA') and low confidence (analog of feature='region') using
 length or bit score.
 
 --------------------------------------
- Explanations of the 4 prediction methods:
+Explanations of the 4 prediction methods:
 
    1. ncbi-rRNA
       NCBI annotations presumably from GPIPE that existed in 
@@ -271,7 +269,8 @@ List of files created for each pairwise comparison of methods:
    <method1>-v-<method2>-<domain>-<family>
       (e.g. 'ncbi-rRNA-v-infernal-bac-ssu')
 
-   The following files were created for each comparison:
+   The following files were created for each comparison. These 
+   are in the comparison-output-files/ dir.
 
    '.id' file:
      list of identical annotations (same sequence and same boundaries)
@@ -305,10 +304,10 @@ Idea for extended benchmark:
 
 The three prediction methods differ significantly in the assignment of
 5' and 3' boundaries for SSU and LSU. It's difficult to know which is
-correct. I want to try to collect a 'gold standard' dataset with trusted
-sequence boundaries for 16S and 23S in archaeal and bacterial genomes
-and see which prediction method most closely agrees with this 'gold
-standard'
+correct in each individual case and more commonly correct overall. I
+want to try to collect a 'gold standard' dataset with trusted sequence
+boundaries for 16S and 23S in archaeal and bacterial genomes and see
+which prediction method most closely agrees with this 'gold standard'
 
 From my Ph.D. thesis work, I found that the Comparative RNA Website
 (CRW) (http://www.rna.icmb.utexas.edu/) has very reliable data on 16S
@@ -326,3 +325,4 @@ If all goes well and a reasonably sized dataset can be constructed, I
 also propose to work towards writing up this benchmark/comparison as a
 publication to be submitted for peer review. 
 
+-----------------------------------------
