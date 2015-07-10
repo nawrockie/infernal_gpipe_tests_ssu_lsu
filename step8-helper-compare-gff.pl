@@ -19,8 +19,9 @@ my $do_leavenames  = 0;
 my $usage  = "perl step8-compare-gff.pl\n"; 
    $usage .= "\t<gff file 1>\n\t<file 1 method key>\n";
    $usage .= "\t<gff file 2>\n\t<file 2 method key>\n";
-   $usage .= "\t<domain; e.g. 'arc' or 'bac'\n";
-   $usage .= "\t<family; e.g. '16S' or '23S'\n";
+   $usage .= "\t<domain; e.g. 'arc' or 'bac', or 'arc-bac' (both)\n";
+   $usage .= "\t<family; e.g. 'ssu' or 'lsu'\n";
+   $usage .= "\t<directory for output files>\n";
    $usage .= "\nOPTIONS:\n";
    $usage .= "\t -leavenames: do not reduce any sequence names of the form gi|\\d+|\\w+|\\S+\| to \\S+\n";
 
@@ -28,8 +29,10 @@ my $usage  = "perl step8-compare-gff.pl\n";
 
 if($do_leavenames) { $do_reducenames = 0; }
 
-if(scalar(@ARGV) != 6) { die $usage; }
-my ($gff1, $mkey1, $gff2, $mkey2, $domain, $family) = (@ARGV);
+if(scalar(@ARGV) != 7) { die $usage; }
+my ($gff1, $mkey1, $gff2, $mkey2, $domain, $family, $outdir) = (@ARGV);
+
+$outdir =~ s/\/$//; # remove trailing / if it exists
 
 if(! -e $gff1) { die "ERROR no file $gff1 exists"; }
 if(! -e $gff2) { die "ERROR no file $gff2 exists"; }
@@ -59,11 +62,11 @@ printf("#\n");
 
 # open output file handles and print column headers
 my ($id_FH, $ol1_FH, $ol2_FH, $unq1_FH, $unq2_FH);
-my $id_file    = $key3 . ".id";
-my $ol1_file   = $key3 . ".ol1";
-my $ol2_file   = $key3 . ".ol2";
-my $unq1_file  = $key3 . ".unq1";
-my $unq2_file  = $key3 . ".unq2";
+my $id_file    = $outdir . "/" . $key3 . ".id";
+my $ol1_file   = $outdir . "/" . $key3 . ".ol1";
+my $ol2_file   = $outdir . "/" . $key3 . ".ol2";
+my $unq1_file  = $outdir . "/" . $key3 . ".unq1";
+my $unq2_file  = $outdir . "/" . $key3 . ".unq2";
 open($id_FH,   ">" . $id_file)   || die "ERROR unable to open $id_file for writing"; 
 open($ol1_FH,  ">" . $ol1_file)  || die "ERROR unable to open $ol1_file for writing"; 
 open($ol2_FH,  ">" . $ol2_file)  || die "ERROR unable to open $ol2_file for writing"; 
@@ -170,19 +173,19 @@ $gff1_2print =~ s/^.+\///; # remove dir path
 $gff2_2print =~ s/^.+\///; # remove dir path
 
 # output tabular summary of comparison
-printf("%-7s  %-6s  %-14s  %9s  %9s  %9s  %9s  %9s  %9s  %9s  %9s  %9s  %9s\n", 
+printf("%-7s  %-7s  %-14s  %9s  %9s  %9s  %9s  %9s  %9s  %9s  %9s  %9s  %9s\n", 
        "#domain", "family", "method", "#hit-tot", "#nt-tot", "avgnt-tot", "#ident", "#hit-olp", "#nt-olp", "frct-olp", "#hit-unq", "#nt-unq", "avgnt-unq");
 
-printf("%7s  %6s  %-14s  %9s  %9s  %9s  %9s  %9s  %9s  %9s  %9s  %9s  %9s\n", 
-       "#------", "------", "--------------", "---------", "---------", "---------", "---------", "---------", "---------", "---------", "---------", "---------", "---------");
-printf("%-7s  %-6s  %-14s  %9d  %9d  %9.1f  %9d  %9d  %9d  %9.4f  %9d  %9d  %9.1f\n",
+printf("%7s  %7s  %-14s  %9s  %9s  %9s  %9s  %9s  %9s  %9s  %9s  %9s  %9s\n", 
+       "#------", "-------", "--------------", "---------", "---------", "---------", "---------", "---------", "---------", "---------", "---------", "---------", "---------");
+printf("%-7s  %-7s  %-14s  %9d  %9d  %9.1f  %9d  %9d  %9d  %9.4f  %9d  %9d  %9.1f\n",
        $domain, $family, $mkey1,
        $nhits1, $nnt1,     ($nhits1 > 0)  ? $nnt1/$nhits1   : 0, 
        $nid, 
        $nol1, $nntol1, $nntol1/($nnt1-$nntunq1),
        $nunq1, $nntunq1,   ($nntunq1 > 0) ? $nntunq1/$nunq1 : 0);
        
-printf("%-7s  %-6s  %-14s  %9d  %9d  %9.1f  %9d  %9d  %9d  %9.4f  %9d  %9d  %9.1f\n",
+printf("%-7s  %-7s  %-14s  %9d  %9d  %9.1f  %9d  %9d  %9d  %9.4f  %9d  %9d  %9.1f\n",
        $domain, $family, $mkey2,
        $nhits2, $nnt2,     ($nhits2 > 0)  ? $nnt2/$nhits2   : 0, 
        $nid, 
@@ -192,10 +195,10 @@ printf("%-7s  %-6s  %-14s  %9d  %9d  %9.1f  %9d  %9d  %9d  %9.4f  %9d  %9d  %9.1
 printf("#\n");
 printf("# Explanation of columns:\n");
 printf("#\n");
-printf("#   domain:    'bac' or 'arc' for bacteria or archaea \n");
-printf("#   family:    'ssu' or 'lsu' for 16S small subunit rRNA or 23S large subunit rRNA\n");
-printf("#   method:    'infernal', 'rnammer', 'ncbi-rRNA' (includes only 'gbkey=rRNA' annotations), or\n");
-printf("#              'ncbi-rRNA-misc' (includes 'gbkey=rRNA' and 'gbkey=misc_feature' annotations)\n");
+printf("#   domain:    'arc' or 'bac' or 'arc-bac' for archaea, bacteria or both\n");
+printf("#   family:    'ssu' or 'lsu' or 'ssu-lsu' for 16S small subunit rRNA or 23S large subunit rRNA or both\n");
+printf("#   method:    'infernal', 'rnammer', 'ncbi-rRNA' (includes only 'rRNA' feature annotations), or\n");
+printf("#              'ncbi-rRNA-misc' (includes 'rRNA' feature and 'region' annotations)\n");
 printf("#   #hit-tot:  total number of hits/annotations\n");
 printf("#   #nt-tot:   total number of nucleotides in all hits/annotations\n");
 printf("#   avgnt-tot: average length of a hit/annotation\n");

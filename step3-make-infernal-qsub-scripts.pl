@@ -4,11 +4,10 @@
 # 
 # Given a file that lists of 'genome keys' and corresponding
 # fasta files, create a qsub script that will submit 
-# three Infernal 1.1.1 cmsearch commands for each genome.
+# two Infernal 1.1.1 cmsearch commands for each genome.
 # Each command will use a different CM file:
-# M1) ssu-and-lsu-all.cm
-# M2) ssu.arc.cm OR ssu.bac.cm (depending on name of genome list provided on cmdline)
-# M3) lsu.arc.cm OR lsu.bac.cm (depending on name of genome list provided on cmdline)
+# M1) ssu.arc.cm OR ssu.bac.cm (depending on name of genome list provided on cmdline)
+# M2) lsu.arc.cm OR lsu.bac.cm (depending on name of genome list provided on cmdline)
 # 
 # Input file: multiple lines of two tab-delimited fields:
 #  <genome-key> <genome-fasta-file>
@@ -36,7 +35,8 @@ else { die "ERROR input genome list file must begin with 'arc.' or 'bac.', $infi
   
 # hard-coded paths
 my $idir    = "/usr/local/infernal/1.1.1/bin";
-my @cmfileA = ("ssu-and-lsu-all.cm");
+#my @cmfileA = ("ssu-and-lsu-all.cm"); # if we also wanted to test a search using all the ssu and lsu CMs
+my @cmfileA = ();
 if($do_arc) { 
   push(@cmfileA, "ssu-arc.cm"); 
   push(@cmfileA, "lsu-arc.cm"); 

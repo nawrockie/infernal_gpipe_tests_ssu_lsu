@@ -1,6 +1,6 @@
 # EPN, Tue Jul  7 09:14:35 2015
 # 
-# step8-concatenate-gff.sh
+# step7-concatenate-gff.sh
 #
 #############################
 # 

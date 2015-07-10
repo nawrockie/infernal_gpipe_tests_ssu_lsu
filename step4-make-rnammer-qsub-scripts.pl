@@ -35,15 +35,6 @@ else { die "ERROR input genome list file must begin with 'arc.' or 'bac.', $infi
   
 # hard-coded paths
 my $edir    = "/home/nawrocke/src/rnammer-1.2";
-my @optA    = ();
-if($do_arc) { 
-  push(@optA, "-S arc -m ssu");
-  push(@optA, "-S arc -m lsu");
-}
-elsif($do_bac) { 
-  push(@optA, "-S bac -m ssu");
-  push(@optA, "-S bac -m lsu");
-}
 
 if(-d $outdir) { die "ERROR directory named $outdir already exists. Remove it and try again, or pick a different output dir name"; }
 
@@ -73,7 +64,8 @@ while(my $line = <IN>) {
     $faoutfile  = $root . ".faout";
     if($do_arc) { $opts = "-S arc "; }
     else        { $opts = "-S bac "; }
-    $opts .= "-m $key -gff $gffoutfile -xml $xmloutfile -h $hmmreport -f $faoutfile";
+#    $opts .= "-m $key -gff $gffoutfile -xml $xmloutfile -h $hmmreport -f $faoutfile";
+    $opts .= "-m $key -gff $gffoutfile";
         
     # use /usr/bin/time to time the execution time
     # 144000 seconds is 40 hours

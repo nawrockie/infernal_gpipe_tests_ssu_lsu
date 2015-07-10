@@ -1,12 +1,9 @@
 #!/usr/bin/env perl
 # EPN, Thu Mar 19 08:46:06 2015
 #
-# step2-get-100-random-genomes.pl: make a list of 25 randomly selected 
+# step2-get-genomes.pl: make a list of 25 randomly selected 
 # archaeal genomes and 50 randomly selected bacterial genomes 
 # from /panfs/pan1.be-md.ncbi.nlm.nih.gov/gpipe/bacterial_pipeline/data19/.
-# 
-# Part of a multi-step procedure for benchmarking Infernal 1.0 versus Infernal 1.1
-# and Rfam 11.0 versus Rfam 12.0.
 # 
 
 use strict;

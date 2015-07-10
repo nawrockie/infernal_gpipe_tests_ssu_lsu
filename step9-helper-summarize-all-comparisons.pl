@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 # EPN, Fri Jul 10 12:48:45 2015
-# step10-helper-summarize-all-comparisons.pl:
+# step9-helper-summarize-all-comparisons.pl:
 # 
 # Given two method names from the following list:
 # 'infernal'
@@ -15,19 +15,21 @@
 use strict;
 use warnings;
 
-my $usage = "perl step10-helper-summarize-all-comparisons.pl <method1> <method2>\n";
+my $usage = "perl step9-helper-summarize-all-comparisons.pl <method1> <method2> <directory with files to use>\n";
 $usage .= "\tacceptable values for 'method1' and 'method2' are:\n";
 $usage .= "\t\t'ncbi-rRNA'\n";
 $usage .= "\t\t'ncbi-rRNA-misc'\n";
 $usage .= "\t\t'rnammer'\n";
 $usage .= "\t\t'infernal'\n";
 
-if(scalar(@ARGV) != 2) { 
+if(scalar(@ARGV) != 3) { 
   die $usage;
 }
-my ($method1, $method2) = (@ARGV);
+my ($method1, $method2, $dir) = (@ARGV);
 if($method1 ne "ncbi-rRNA" && $method1 ne "ncbi-rRNA-misc" && $method1 ne "rnammer" && $method1 ne "infernal") { die $usage; }
 if($method2 ne "ncbi-rRNA" && $method2 ne "ncbi-rRNA-misc" && $method2 ne "rnammer" && $method2 ne "infernal") { die $usage; }
+
+$dir =~ s/\/$//; # remove trailing / if it exists
 
 # make sure we have all the files we need:
 my @dom_fam_A = ("all", "bac-ssu", "arc-ssu", "bac-lsu", "arc-lsu");
@@ -36,7 +38,7 @@ my @file_A = ();
 # go through each file 
 for(my $df = 0; $df < scalar(@dom_fam_A); $df++) { 
   my $dom_fam = $dom_fam_A[$df];
-  my $file = $method1 . "-v-" . $method2 . "-" . $dom_fam . ".compare-gff";
+  my $file = $dir . "/" . $method1 . "-v-" . $method2 . "-" . $dom_fam . ".compare-gff";
 
 # DO NOT PRINT THIS PART:
 # Domain:                arc-bac

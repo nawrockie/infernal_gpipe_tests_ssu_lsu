@@ -11,8 +11,8 @@
 # 
 # Each of the tblout files must end with .tbl.
 #
-# Takes one command line argument: 
-# <file with list of cmsearch v1.1 tabfiles>
+# Takes one command line argument, or pipe in a list of files
+# <file with list of cmsearch v1.1 tblout files>
 # should have N lines, each with the name of a single tab file
 #
 use strict;
@@ -24,15 +24,13 @@ my $gff_script = $script_dir . "step5-helper-convert-infernal-to-gff.pl";
 if(! -s $gff_script) { die "ERROR required script $gff_script does not exist"; }
 
 my $usage = "perl step5-wrapper-convert-infernal-to-gff.pl <file with list of Infernal 1.1 tblout files>";
-if(scalar(@ARGV) != 1) { die $usage; }
+#if(scalar(@ARGV) != 1) { die $usage; }
 
-my ($listfile) = (@ARGV);
 
 my $nfiles = 0;
 my $gff_file;
 
-open(IN, $listfile) || die "ERROR unable to open $listfile for reading";
-while(my $line = <IN>) { 
+while(my $line = <>) { 
   my $tbl_file = $line;
   chomp $tbl_file;
   #1p1/crenarchaeote_SCGC_AAA261-L22.5S.tbl
@@ -45,7 +43,6 @@ while(my $line = <IN>) {
   RunCommand("perl $gff_script $tbl_file > $gff_file");
   $nfiles++;
 }
-close(IN);
 
 printf("GFF files created for $nfiles Infernal 1.1 tblout files\n");
 exit 0;

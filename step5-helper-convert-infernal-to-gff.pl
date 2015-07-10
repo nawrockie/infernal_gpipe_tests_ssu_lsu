@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 # EPN, Mon Jul  6 15:52:18 2015
 #
-# step6-helper-convert-infernal-to-gff.pl
+# step5-helper-convert-infernal-to-gff.pl
 #
 # Formerly: https://github.com/nawrockie/infernal_gpipe_tests_upgrade_to_1p1.git:
 # step6-helper-i1p1-tblout2gff.pl:

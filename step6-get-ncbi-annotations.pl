@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 # EPN, Tue Jun 30 11:29:25 2015
-# step7-get-ncbi-annotations.pl:
+# step6-get-ncbi-annotations.pl:
 # 
 # Given a file that lists of 'genome keys' and corresponding
 # fasta files, find the existing GFF annotation of SSU and 
@@ -14,7 +14,7 @@
 use strict;
 use warnings;
 
-my $usage = "perl step7-get-ncbi-annotations.pl\n";
+my $usage = "perl step6-get-ncbi-annotations.pl\n";
 $usage .= "\t<genome list output from step1 (either arc.r25.genome.list or bac.r50.genome.list)>\n";
 $usage .= "\t<output dir name to put SSU and LSU GFF files in (will be created, must not already exist)\n";
 
@@ -126,26 +126,26 @@ while(my $line = <IN>) {
         elsif($db eq "Protein Homology" && ($type eq "CDS" || $type eq "gene") && ($extra =~ m/rRNA/ || $extra =~ m/ribosomal RNA/)) { 
           # case 4: NOT a keeper; protein homology that just happens to have rRNA in it's line, possibly a ribosomal protein
           # example: 
-          # ASMP01000011.1	Protein Homology	CDS	3152	3275	.	-	1	ID=cds621;Parent=gene656;Name=WGS:ASMP:I749_RS03285;Note=L30 binds domain II of the 23S rRNA and the 5S rRNA%3B similar to eukaryotic protein L7;end_range=3275,.;gbkey=CDS;gene=rpl30p;partial=true;product=50S ribosomal protein L30;protein_id=WGS:ASMP:I749_RS03285;transl_table=11 at step7-get-ncbi-annotations.pl line 107, <GFFIN> line 1386.
+          # ASMP01000011.1	Protein Homology	CDS	3152	3275	.	-	1	ID=cds621;Parent=gene656;Name=WGS:ASMP:I749_RS03285;Note=L30 binds domain II of the 23S rRNA and the 5S rRNA%3B similar to eukaryotic protein L7;end_range=3275,.;gbkey=CDS;gene=rpl30p;partial=true;product=50S ribosomal protein L30;protein_id=WGS:ASMP:I749_RS03285;transl_table=11 at step6-get-ncbi-annotations.pl line 107, <GFFIN> line 1386.
           ; # do nothing; protein that has rRNA in it's extra field
         }
         elsif($db eq "cmsearch" && $type eq "rRNA" && $extra =~ m/product=5S ribosomal RNA/) { 
           # case 5: NOT a keeper; 5S cmsearch prediction
           # example: 
-          # AVSQ01000002.1	cmsearch	rRNA	35477	35596	.	-	.	ID=rna4;Parent=gene51;gbkey=rRNA;product=5S ribosomal RNA at step7-get-ncbi-annotations.pl line 107, <GFFIN> line 118.
+          # AVSQ01000002.1	cmsearch	rRNA	35477	35596	.	-	.	ID=rna4;Parent=gene51;gbkey=rRNA;product=5S ribosomal RNA at step6-get-ncbi-annotations.pl line 107, <GFFIN> line 118.
           ; # do nothing, cmsearch 5S annotation
         }
         elsif($db eq "cmsearch" && $type eq "exon" && $extra =~ m/product=5S ribosomal RNA/) { 
           # case 6: NOT a keeper; 5S cmsearch prediction
           # NOTE: same as case 6 but type is "exon" instead of "rRNA"
           # example:
-          # AVSQ01000002.1	cmsearch	exon	35477	35596	.	-	.	ID=id8;Parent=rna4;gbkey=rRNA;product=5S ribosomal RNA at step7-get-ncbi-annotations.pl line 114, <GFFIN> line 119.
+          # AVSQ01000002.1	cmsearch	exon	35477	35596	.	-	.	ID=id8;Parent=rna4;gbkey=rRNA;product=5S ribosomal RNA at step6-get-ncbi-annotations.pl line 114, <GFFIN> line 119.
           ; # do nothing, cmsearch 5S annotation
         }
         elsif(($db eq "Genbank" || $db eq "EMBL") && $type eq "gene" && $extra =~ m/old\_locus\_tag=[^\;]*rRNA/) { 
           # case 7: NOT a keeper; oddball, found one example
           # example:
-          # HF922670.1	EMBL	gene	59	1566	.	+	.	ID=gene11;Name=BN179_RS00060;gbkey=Gene;locus_tag=BN179_RS00060;old_locus_tag=BN179_16s_rRNA_1 at step7-get-ncbi-annotations.pl line 140, <GFFIN> line 32.
+          # HF922670.1	EMBL	gene	59	1566	.	+	.	ID=gene11;Name=BN179_RS00060;gbkey=Gene;locus_tag=BN179_RS00060;old_locus_tag=BN179_16s_rRNA_1 at step6-get-ncbi-annotations.pl line 140, <GFFIN> line 32.
           ; # do nothing
         }
         else { 

@@ -24,8 +24,8 @@ arc-bac  ssu-lsu  rnammer               219     477463     2180.2          2    
 #
 #   domain:    'arc' or 'bac' or 'arc-bac' for archaea, bacteria or both
 #   family:    'ssu' or 'lsu' or 'ssu-lsu' for 16S small subunit rRNA or 23S large subunit rRNA or both
-#   method:    'infernal', 'rnammer', 'ncbi-rRNA' (includes only 'gbkey=rRNA' annotations), or
-#              'ncbi-rRNA-misc' (includes 'gbkey=rRNA' and 'gbkey=misc_feature' annotations)
+#   method:    'infernal', 'rnammer', 'ncbi-rRNA' (includes only 'rRNA' feature annotations), or
+#              'ncbi-rRNA-misc' (includes 'rRNA' feature and 'region' annotations)
 #   #hit-tot:  total number of hits/annotations
 #   #nt-tot:   total number of nucleotides in all hits/annotations
 #   avgnt-tot: average length of a hit/annotation
