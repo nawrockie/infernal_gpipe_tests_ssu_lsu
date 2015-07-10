@@ -25,6 +25,8 @@ my ($infile, $outdir) = (@ARGV);
 my $do_arc = 0;
 my $do_bac = 0;
 
+$outdir =~ s/\/$//; # remove trailing / if it exists
+
 # make sure our input file begins with 'arc.' or 'bac.'
 if   ($infile =~ m/^arc\./) { $do_arc = 1; $do_bac = 0; }
 elsif($infile =~ m/^bac\./) { $do_arc = 0; $do_bac = 1; }
@@ -51,7 +53,7 @@ while(my $line = <IN>) {
   chomp $gff_file;
   if(! -e $gff_file) { die "ERROR $gff_file for key $fakey does not exist"; }
 
-  my $root         = $outdir . $fakey ;
+  my $root         = $outdir . "/" . $fakey ;
   my $gff_ssu_rRNA = $root . ".ssu.rRNA.gff";
   my $gff_ssu_misc = $root . ".ssu.misc.gff";
   my $gff_lsu_rRNA = $root . ".lsu.rRNA.gff";
@@ -69,7 +71,7 @@ while(my $line = <IN>) {
   my @kept_start_A = ();
   my @kept_stop_A  = ();
 
-  printf("parsing GFF file $gff_file\n");
+  # printf("parsing GFF file $gff_file\n");
   while($line = <GFFIN>) { 
     if($line !~ m/^\#/) { 
       chomp $line;
