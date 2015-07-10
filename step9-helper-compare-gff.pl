@@ -17,21 +17,26 @@ my $do_reducenames = 1;
 my $do_leavenames  = 0;
 
 my $usage  = "perl step8-compare-gff.pl\n"; 
-   $usage .= "\t<gff file 1>\n\t<file 1 key for naming output files for file 1>\n";
-   $usage .= "\t<gff file 2>\n\t<file 2 key for naming output files for file 2>\n";
-   $usage .= "\t<third key for naming all output files>\n\n";
-   $usage .= "\tOPTIONS:\n";
+   $usage .= "\t<gff file 1>\n\t<file 1 method key>\n";
+   $usage .= "\t<gff file 2>\n\t<file 2 method key>\n";
+   $usage .= "\t<domain; e.g. 'arc' or 'bac'\n";
+   $usage .= "\t<family; e.g. '16S' or '23S'\n";
+   $usage .= "\nOPTIONS:\n";
    $usage .= "\t -leavenames: do not reduce any sequence names of the form gi|\\d+|\\w+|\\S+\| to \\S+\n";
 
 &GetOptions( "leavenames" => \$do_leavenames);
 
 if($do_leavenames) { $do_reducenames = 0; }
 
-if(scalar(@ARGV) != 5) { die $usage; }
-my ($gff1, $key1, $gff2, $key2, $key3) = (@ARGV);
+if(scalar(@ARGV) != 6) { die $usage; }
+my ($gff1, $mkey1, $gff2, $mkey2, $domain, $family) = (@ARGV);
 
 if(! -e $gff1) { die "ERROR no file $gff1 exists"; }
 if(! -e $gff2) { die "ERROR no file $gff2 exists"; }
+
+my $key1 = $mkey1 . "-" . $domain . "-" . $family;
+my $key2 = $mkey2 . "-" . $domain . "-" . $family;
+my $key3 = $mkey1 . "-v-" . $mkey2 . "-" . $domain . "-" . $family;
 
 my %hits1_HA = (); # hash of hashes of arrays for gff file 1,  key: target sequence name, value: array of "<start>.<end>.<strand>"
 my %hits2_HA = (); # hash of hashes of arrays for gff file 2,  key: target sequence name, value: array of "<start>.<end>.<strand>"
@@ -43,11 +48,13 @@ my $nnt2     = 0;  # number of nucleotides in all hits in $gff2 file
 parse_gff($gff1, \$nhits1, \$nnt1, \%hits1_HA, $do_reducenames);
 parse_gff($gff2, \$nhits2, \$nnt2, \%hits2_HA, $do_reducenames);
 
+printf("# Domain:                $domain\n");
+printf("# Family:                $family\n");
 printf("# GFF file 1:            $gff1\n");
 printf("# GFF file 1 output key: $key1\n");
 printf("# GFF file 2:            $gff2\n");
 printf("# GFF file 2 output key: $key2\n");
-printf("# Output Key: $key3\n");
+printf("# Output Key:            $key3\n");
 printf("#\n");
 
 # open output file handles and print column headers
@@ -63,17 +70,17 @@ open($ol2_FH,  ">" . $ol2_file)  || die "ERROR unable to open $ol2_file for writ
 open($unq1_FH, ">" . $unq1_file) || die "ERROR unable to open $unq1_file for writing"; 
 open($unq2_FH, ">" . $unq2_file) || die "ERROR unable to open $unq2_file for writing"; 
 
-printf $id_FH   ("# GFF file 1 (key: %10s): $gff1\n", $key1);
-printf $ol1_FH  ("# GFF file 1 (key: %10s): $gff1\n", $key1);
-printf $ol2_FH  ("# GFF file 1 (key: %10s): $gff1\n", $key1);
-printf $unq1_FH ("# GFF file 1 (key: %10s): $gff1\n", $key1);
-printf $unq2_FH ("# GFF file 1 (key: %10s): $gff1\n", $key1);
+printf $id_FH   ("# GFF file 1 (%10s): $gff1\n", $key1);
+printf $ol1_FH  ("# GFF file 1 (%10s): $gff1\n", $key1);
+printf $ol2_FH  ("# GFF file 1 (%10s): $gff1\n", $key1);
+printf $unq1_FH ("# GFF file 1 (%10s): $gff1\n", $key1);
+printf $unq2_FH ("# GFF file 1 (%10s): $gff1\n", $key1);
 
-printf $id_FH   ("# GFF file 2 (key: %10s): $gff2\n", $key2);
-printf $ol1_FH  ("# GFF file 2 (key: %10s): $gff2\n", $key2);
-printf $ol2_FH  ("# GFF file 2 (key: %10s): $gff2\n", $key2);
-printf $unq1_FH ("# GFF file 2 (key: %10s): $gff2\n", $key2);
-printf $unq2_FH ("# GFF file 2 (key: %10s): $gff2\n", $key2);
+printf $id_FH   ("# GFF file 2 (%10s): $gff2\n", $key2);
+printf $ol1_FH  ("# GFF file 2 (%10s): $gff2\n", $key2);
+printf $ol2_FH  ("# GFF file 2 (%10s): $gff2\n", $key2);
+printf $unq1_FH ("# GFF file 2 (%10s): $gff2\n", $key2);
+printf $unq2_FH ("# GFF file 2 (%10s): $gff2\n", $key2);
 
 print $id_FH   ("# Key3: $key3\n");
 print $ol1_FH  ("# Key3: $key3\n");
@@ -84,11 +91,11 @@ print $unq2_FH ("# Key3: $key3\n");
 print $id_FH   ("# Hits in both GFF files with identical coordinates and strand\n");
 
 print $ol1_FH  ("# Hits in both GFF files that overlap and are on same strand and overlap but which do not have identical coordinates\n");
-print $ol1_FH  ("# Each hit in GFF1 is allowed to overlap with at most 1 hit in GFF2 (*THIS MAKES THIS FILE DIFFERENT THAN THE\n");
+print $ol1_FH  ("# Each hit in GFF1 is allowed to overlap with at most 1 hit in GFF2 (*THIS MAKES THIS FILE POTENTIALLY DIFFERENT THAN THE\n");
 print $ol1_FH  ("# OTHER OVERLAP FILE* ($ol2_file)\n");
 
 print $ol2_FH  ("# Hits in both GFF files that overlap and are on same strand and overlap but which do not have identical coordinates\n");
-print $ol2_FH  ("# Each hit in GFF2 is allowed to overlap with at most 1 hit in GFF1 (*THIS MAKES THIS FILE DIFFERENT THAN THE\n");
+print $ol2_FH  ("# Each hit in GFF2 is allowed to overlap with at most 1 hit in GFF1 (*THIS MAKES THIS FILE POTENTIALLY DIFFERENT THAN THE\n");
 print $ol2_FH  ("# OTHER OVERLAP FILE* ($ol1_file)\n");
 
 print $unq1_FH ("# Hits in GFF file 1 ($key1) but not in GFF file 2 ($key2)\n");
@@ -157,32 +164,60 @@ close($ol2_FH);
 close($unq1_FH);
 close($unq2_FH);
 
-# output tabular summary of comparison
-printf("#%4s  %-12s  %9s  %9s  %9s  %9s  %9s  %9s  %9s  %9s  %9s  %9s\n", 
-       "file", "desc", "#hit-tot", "#nt-tot", "avgnt-tot", "#ident", "#hit-olp", "#nt-olp", "frct-olp", "#hit-unq", "#nt-unq", "avgnt-unq");
+my $gff1_2print = $gff1;
+my $gff2_2print = $gff2;
+$gff1_2print =~ s/^.+\///; # remove dir path
+$gff2_2print =~ s/^.+\///; # remove dir path
 
-printf("%5s  %12s  %9s  %9s  %9s  %9s  %9s  %9s  %9s  %9s  %9s  %9s\n", 
-       "#----", "------------", "---------", "---------", "---------", "---------", "---------", "---------", "---------", "---------", "---------", "---------");
-printf("%-5s  %-12s  %9d  %9d  %9.1f  %9d  %9d  %9d  %9.4f  %9d  %9d  %9.1f\n",
-       "GFF1", $key1, 
+# output tabular summary of comparison
+printf("%-7s  %-6s  %-14s  %9s  %9s  %9s  %9s  %9s  %9s  %9s  %9s  %9s  %9s\n", 
+       "#domain", "family", "method", "#hit-tot", "#nt-tot", "avgnt-tot", "#ident", "#hit-olp", "#nt-olp", "frct-olp", "#hit-unq", "#nt-unq", "avgnt-unq");
+
+printf("%7s  %6s  %-14s  %9s  %9s  %9s  %9s  %9s  %9s  %9s  %9s  %9s  %9s\n", 
+       "#------", "------", "--------------", "---------", "---------", "---------", "---------", "---------", "---------", "---------", "---------", "---------", "---------");
+printf("%-7s  %-6s  %-14s  %9d  %9d  %9.1f  %9d  %9d  %9d  %9.4f  %9d  %9d  %9.1f\n",
+       $domain, $family, $mkey1,
        $nhits1, $nnt1,     ($nhits1 > 0)  ? $nnt1/$nhits1   : 0, 
        $nid, 
        $nol1, $nntol1, $nntol1/($nnt1-$nntunq1),
        $nunq1, $nntunq1,   ($nntunq1 > 0) ? $nntunq1/$nunq1 : 0);
        
-printf("%-5s  %-12s  %9d  %9d  %9.1f  %9d  %9d  %9d  %9.4f  %9d  %9d  %9.1f\n",
-       "GFF2", $key2,
+printf("%-7s  %-6s  %-14s  %9d  %9d  %9.1f  %9d  %9d  %9d  %9.4f  %9d  %9d  %9.1f\n",
+       $domain, $family, $mkey2,
        $nhits2, $nnt2,     ($nhits2 > 0)  ? $nnt2/$nhits2   : 0, 
        $nid, 
        $nol2, $nntol2, $nntol2/($nnt2-$nntunq2),
        $nunq2, $nntunq2,   ($nntunq2 > 0) ? $nntunq2/$nunq2 : 0);
 
 printf("#\n");
-printf("# Output file with list of identical hits:                      %-30s\n", $id_file);
-printf("# Output file with list of overlapping hits (GFF1 hits first):  %-30s\n", $ol1_file);
-printf("# Output file with list of overlapping hits (GFF2 hits first):  %-30s\n", $ol2_file);
-printf("# Output file with list of GFF file 1 %-12s unique hits: %-30s\n", $key1, $unq1_file);
-printf("# Output file with list of GFF file 2 %-12s unique hits: %-30s\n", $key2, $unq2_file);
+printf("# Explanation of columns:\n");
+printf("#\n");
+printf("#   domain:    'bac' or 'arc' for bacteria or archaea \n");
+printf("#   family:    'ssu' or 'lsu' for 16S small subunit rRNA or 23S large subunit rRNA\n");
+printf("#   method:    'infernal', 'rnammer', 'ncbi-rRNA' (includes only 'gbkey=rRNA' annotations), or\n");
+printf("#              'ncbi-rRNA-misc' (includes 'gbkey=rRNA' and 'gbkey=misc_feature' annotations)\n");
+printf("#   #hit-tot:  total number of hits/annotations\n");
+printf("#   #nt-tot:   total number of nucleotides in all hits/annotations\n");
+printf("#   avgnt-tot: average length of a hit/annotation\n");
+printf("#   #ident:    number of identical annotations with adjacent row\n");
+printf("#   #hit-olp:  number of non-identical but overlapping annotations (at least 1 nt) with adjacent row\n");
+printf("#   #nt-olp:   number of nucleotides in this methods annotations that overlap with\n");
+printf("#              adjacent row's annotations\n");
+printf("#   frct-olp:  fraction of nucleotides in this methods annotations that overlap with\n");
+printf("#              adjacent row's annotations\n");
+printf("#   #hit-unq:  number of this method's 'unique' annotations, these do not overlap with any of\n");
+printf("#              adjacent row's annotations (by >=1 nucleotides)\n");
+printf("#   #nt-unq:   number of nucleotides in this method's unique annotations\n");
+printf("#   avgnt-unq: average length of this method's unique annotations\n");
+
+printf("#\n");
+printf("# Output files created:\n");
+printf("#\n");
+printf("# Output file with list of identical hits:                                                        %-30s\n", $id_file);
+printf("# Output file with list of overlapping hits (each GFF1 hit can overlap with at most 1 GFF2 hit):  %-30s\n", $ol1_file);
+printf("# Output file with list of overlapping hits (each GFF2 hit can overlap with at most 1 GFF1 hit):  %-30s\n", $ol2_file);
+printf("# Output file with list of GFF file 1 %-22s unique hits:                         %-30s\n", $key1, $unq1_file);
+printf("# Output file with list of GFF file 2 %-22s unique hits:                         %-30s\n", $key2, $unq2_file);
 exit 0;
 
 #############
