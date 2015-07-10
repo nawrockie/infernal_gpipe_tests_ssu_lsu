@@ -1,89 +1,97 @@
+#!/usr/bin/env perl
+# EPN, Fri Jun 26 15:34:24 2015
+# step5-remove-infernal-overlaps.pl:
+# 
+# Given a file that lists of 'genome keys' and corresponding
+# fasta files, remove overlaps from infernal output files.
+# 
+# Input file: multiple lines of two tab-delimited fields:
+#  <genome-key> <genome-fasta-file>
+#
+# Input is generated as output of related script: step2-get-100-random-genomes.pl.
+# 
 use strict;
 use warnings;
 
-my $usage = "grep -v ^\# <cmsearch --tblout file> | sort -k16,16g -k15,15rn | perl remove-infernal-overlaps.pl";
+my $usage = "perl step5-remove-infernal-overlaps.pl\n";
+$usage .= "\t<genome list output from step1 (either arc.r25.genome.list or bac.r50.genome.list)>\n";
+$usage .= "\t<output dir name with infernal output files\n";
 
-my $prv_evalue = undef;
-my %hits_HHA = ();
-while(my $line = <>) { 
-  chomp $line;
-  my @elA = split(/\s+/, $line);
-#gi|253972022|gb|CP000819.1| -         tRNA                 RF00005    cm        1       71  4189361  4189433      +    no    1 0.64   0.0   59.8   2.1e-12 !   Escherichia coli B str. REL606, complete genome
-  my ($target, $start, $stop, $strand, $evalue) = ($elA[0], $elA[7], $elA[8], $elA[9], $elA[15]);
-  #printf("target: $target\nstart: $start\nstop: $stop\nstrand: $strand\nevalue: $evalue\n");
-  if($strand eq "-") { 
-    # swap 
-    my $tmp = $start;
-    $start = $stop;
-    $stop = $tmp;
-  }
-  if(defined $prv_evalue && $evalue < $prv_evalue) { die "ERROR not sorted by E-value ($evalue < $prv_evalue)"; }
-  $prv_evalue = $evalue;
-  my $found_overlap = 0;
-  if(exists $hits_HHA{$target}) { 
-    if(exists $hits_HHA{$target}{$strand}) { 
-      foreach my $start_stop (@{$hits_HHA{$target}{$strand}}) { 
-        my ($start2, $stop2) = split(":", $start_stop);
-        my $overlap_nres = get_nres_overlap($start, $stop, $start2, $stop2);
-        if($overlap_nres > 0) { 
-          $found_overlap = 1; 
-          #printf("FOUND OVERLAP BETWEEN $start..$stop and $start2..$stop2 on strand $strand\n"); 
-        }
-      }
-    }
-  }
-  if($found_overlap) { 
-    ;  # do nothing; 
-  }
-  else { 
-    print $line . "\n";
-    if(! exists $hits_HHA{$target}) { 
-      %{$hits_HHA{$target}} = ();
-    }
-    if(! exists $hits_HHA{$target}{$strand}) { 
-      @{$hits_HHA{$target}{$strand}} = ();
-    }
-    push(@{$hits_HHA{$target}{$strand}}, $start . ":" . $stop); 
-    #printf("pushed $start:$stop to hits_HHA $target $strand\n");
-  }
+if(scalar(@ARGV) != 2) { 
+  die $usage;
 }
-# Subroutine: get_nres_overlap()
-# Args:       $start1: start position of hit 1 (must be <= $end1)
-#             $end1:   end   position of hit 1 (must be >= $end1)
-#             $start2: start position of hit 2 (must be <= $end2)
-#             $end2:   end   position of hit 2 (must be >= $end2)
+my ($infile, $outdir) = (@ARGV);
+my $do_arc = 0;
+my $do_bac = 0;
+
+# make sure our input file begins with 'arc.' or 'bac.'
+if   ($infile =~ m/^arc\./) { $do_arc = 1; $do_bac = 0; }
+elsif($infile =~ m/^bac\./) { $do_arc = 0; $do_bac = 1; }
+else { die "ERROR input genome list file must begin with 'arc.' or 'bac.', $infile does not."; }
+  
+# hard-coded paths
+my @cmfileA = ("ssu-and-lsu-all.cm");
+if($do_arc) { 
+  push(@cmfileA, "ssu-arc.cm"); 
+  push(@cmfileA, "lsu-arc.cm"); 
+}
+elsif($do_bac) { 
+  push(@cmfileA, "ssu-bac.cm"); 
+  push(@cmfileA, "lsu-bac.cm"); 
+}
+
+my $cmopts = "--cut_ga --rfam --cpu 0 --nohmmonly";
+
+# ensure our CM files exist
+foreach my $cmfile (@cmfileA) { 
+  if(! -s $cmfile) { die "ERROR $cmfile does not exist"; }
+}
+
+if(! -d $outdir) { die "ERROR directory named $outdir does not exist"; }
+
+open(IN, $infile) || die "ERROR unable to open file $infile for reading"; 
+
+while(my $line = <IN>) { 
+  # Example line:
+  # Nanoarchaeota_archaeon_SCGC_AAA011-D5	/panfs/pan1.be-md.ncbi.nlm.nih.gov/gpipe/bacterial_pipeline/data19/Nanoarchaeota_archaeon_SCGC_AAA011-D5/696928-DENOVO-20150227-1757.1483344/output/bacterial_annot/ASMP01.annotation.nucleotide.fa
+
+  chomp $line;
+  my ($fakey, $fafile) = split(/\t/, $line);
+  if(! -e $fafile) { die "ERROR fasta file $fafile for key $fakey does not exist"; }
+
+  my $cmkey = "ssu-and-lsu-all";
+  
+  my $root       = $outdir . "/" . $fakey . "." . $cmkey;
+  my $tbloutfile = $root . ".tbl"; 
+  my $deoverlapped_tbloutfile = $root . ".deoverlapped.tbl"; 
+
+  
+  if(! -e $tbloutfile) { die "ERROR $tbloutfile does not exist"; }
+  my $cmd = "grep -v \\# $tbloutfile | sort -k16,16g -k15,15rn | perl remove-infernal-overlaps.pl > $deoverlapped_tbloutfile";
+  # print("Running $cmd ... ");
+  printf("Removing overlaps from %-85s with remove-overlaps.pl ... ", $tbloutfile);
+  RunCommand($cmd);
+  print("done.\n");
+}
+exit 0;
+
+#############
+# SUBROUTINES
+#############
 #
-# Returns:    Number of residues of overlap between hit1 and hit2,
-#             0 if none
-# Dies:       if $end1 < $start1 or $end2 < $start2.
+# Subroutine: RunCommand()
+# Args:       $cmd:            command to run, with a "system" command;
+#
+# Returns:    void
+# Dies:       if $cmd fails
 
-sub get_nres_overlap {
-  if(scalar(@_) != 4) { die "ERROR get_nres_overlap() entered with wrong number of input args"; }
+sub RunCommand {
+  if(scalar(@_) != 1) { die "ERROR RunCommand() entered with wrong number of input args"; }
 
-  my ($start1, $end1, $start2, $end2) = @_; 
+  my ($cmd) = @_;
 
-  #printf("in get_nres_overlap $start1..$end1 $start2..$end2\n");
+  system($cmd);
+  if($? != 0) { die "ERROR command failed:\n$cmd\n"; }
 
-  if($start1 > $end1) { die "ERROR start1 > end1 ($start1 > $end1) in get_nres_overlap()"; }
-  if($start2 > $end2) { die "ERROR start2 > end2 ($start2 > $end2) in get_nres_overlap()"; }
-
-  # Given: $start1 <= $end1 and $start2 <= $end2.
-  
-  # Swap if nec so that $start1 <= $start2.
-  if($start1 > $start2) { 
-    my $tmp;
-    $tmp   = $start1; $start1 = $start2; $start2 = $tmp;
-    $tmp   =   $end1;   $end1 =   $end2;   $end2 = $tmp;
-  }
-  
-  # 3 possible cases:
-  # Case 1. $start1 <=   $end1 <  $start2 <=   $end2  Overlap is 0
-  # Case 2. $start1 <= $start2 <=   $end1 <    $end2  
-  # Case 3. $start1 <= $start2 <=   $end2 <=   $end1
-  if($end1 < $start2) { return 0; }                      # case 1
-  if($end1 <   $end2) { return ($end1 - $start2 + 1); }  # case 2
-  if($end2 <=  $end1) { return ($end2 - $start2 + 1); }  # case 3
-  die "Unforeseen case in get_nres_overlap $start1..$end1 and $start2..$end2";
-
-  return; # NOT REACHED
+  return;
 }
