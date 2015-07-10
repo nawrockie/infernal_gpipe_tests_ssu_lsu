@@ -11,6 +11,8 @@ for dom in arc bac; do
         perl step10-helper-compare-reciprocal-compare-gff-output.pl ncbi-rRNA-misc-v-infernal-$dom-$fam.compare-gff infernal-v-ncbi-rRNA-misc-$dom-$fam.compare-gff > ncbi-rRNA-misc-v-infernal-$dom-$fam.reciprocal-validation
     done
 done
+perl step10-helper-compare-reciprocal-compare-gff-output.pl ncbi-rRNA-v-infernal-all.compare-gff      infernal-v-ncbi-rRNA-all.compare-gff      > ncbi-rRNA-v-infernal-all.reciprocal-validation
+perl step10-helper-compare-reciprocal-compare-gff-output.pl ncbi-rRNA-misc-v-infernal-all.compare-gff infernal-v-ncbi-rRNA-misc-all.compare-gff > ncbi-rRNA-misc-v-infernal-all.reciprocal-validation
 #
 
 # validate NCBI vs RNAmmer (and vice versa) reciprocal comparisons:
@@ -21,6 +23,8 @@ for dom in arc bac; do
         perl step10-helper-compare-reciprocal-compare-gff-output.pl ncbi-rRNA-misc-v-rnammer-$dom-$fam.compare-gff rnammer-v-ncbi-rRNA-misc-$dom-$fam.compare-gff > ncbi-rRNA-misc-v-rnammer-$dom-$fam.reciprocal-validation
     done
 done
+perl step10-helper-compare-reciprocal-compare-gff-output.pl ncbi-rRNA-v-rnammer-all.compare-gff      rnammer-v-ncbi-rRNA-all.compare-gff      > ncbi-rRNA-v-rnammer-all.reciprocal-validation
+perl step10-helper-compare-reciprocal-compare-gff-output.pl ncbi-rRNA-misc-v-rnammer-all.compare-gff rnammer-v-ncbi-rRNA-misc-all.compare-gff > ncbi-rRNA-misc-v-rnammer-all.reciprocal-validation
 # 
 
 # Infernal vs RNAmmer comparisons:
@@ -29,3 +33,4 @@ for dom in arc bac; do
         perl step10-helper-compare-reciprocal-compare-gff-output.pl infernal-v-rnammer-$dom-$fam.compare-gff rnammer-v-infernal-$dom-$fam.compare-gff > infernal-v-rnammmer-$dom-$fam.reciprocal-validation
     done
 done
+perl step10-helper-compare-reciprocal-compare-gff-output.pl infernal-v-rnammer-all.compare-gff      rnammer-v-infernal-all.compare-gff      > infernal-v-rnammer-all.reciprocal-validation
