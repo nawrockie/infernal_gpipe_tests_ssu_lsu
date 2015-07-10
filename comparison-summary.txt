@@ -1,0 +1,40 @@
+#domain  family   method           #hit-tot    #nt-tot  avgnt-tot     #ident   #hit-olp    #nt-olp   frct-olp   #hit-unq    #nt-unq  avgnt-unq
+#------  -------  --------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+arc-bac  ssu-lsu  ncbi-rRNA             327     504156     1541.8         29        293     477072     0.9469          5        307       61.4
+arc-bac  ssu-lsu  infernal              363     544009     1498.6         29        293     477072     0.9501         41      41880     1021.5
+#
+arc-bac  ssu-lsu  ncbi-rRNA             327     504156     1541.8          2        211     448454     0.9858        114      49225      431.8
+arc-bac  ssu-lsu  rnammer               219     477463     2180.2          2        211     448454     0.9746          6      17319     2886.5
+#
+arc-bac  ssu-lsu  infernal              363     544009     1498.6         27        192     423491     0.9000        144      73438      510.0
+arc-bac  ssu-lsu  rnammer               219     477463     2180.2         27        192     423486     0.8870          0          0        0.0
+#
+#
+#
+#domain  family   method           #hit-tot    #nt-tot  avgnt-tot     #ident   #hit-olp    #nt-olp   frct-olp   #hit-unq    #nt-unq  avgnt-unq
+#------  -------  --------------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------  ---------
+arc-bac  ssu-lsu  ncbi-rRNA-misc        392     539874     1377.2         29        337     509235     0.9464         26       1802       69.3
+arc-bac  ssu-lsu  infernal              363     544009     1498.6         29        334     506402     0.9309          0          0        0.0
+#
+arc-bac  ssu-lsu  ncbi-rRNA-misc        392     539874     1377.2          2        224     460661     0.9861        166      72718      438.1
+arc-bac  ssu-lsu  rnammer               219     477463     2180.2          2        217     457602     0.9584          0          0        0.0
+#
+#
+# Explanation of columns:
+#
+#   domain:    'arc' or 'bac' or 'arc-bac' for archaea, bacteria or both
+#   family:    'ssu' or 'lsu' or 'ssu-lsu' for 16S small subunit rRNA or 23S large subunit rRNA or both
+#   method:    'infernal', 'rnammer', 'ncbi-rRNA' (includes only 'gbkey=rRNA' annotations), or
+#              'ncbi-rRNA-misc' (includes 'gbkey=rRNA' and 'gbkey=misc_feature' annotations)
+#   #hit-tot:  total number of hits/annotations
+#   #nt-tot:   total number of nucleotides in all hits/annotations
+#   avgnt-tot: average length of a hit/annotation
+#   #ident:    number of identical annotations with adjacent row
+#   #hit-olp:  number of non-identical but overlapping annotations (at least 1 nt) with adjacent row
+#   #nt-olp:   number of nucleotides in this methods annotations that overlap with
+#              adjacent row's annotations
+#   frct-olp:  fraction of nucleotides in this methods annotations that overlap with
+#              adjacent row's annotations
+#   #hit-unq:  number of this method's 'unique' annotations, these do not overlap with any of
+#              adjacent row's annotations (by >=1 nucleotides)
+#   #nt-unq:   number of nucleotides in this method's unique annotations
