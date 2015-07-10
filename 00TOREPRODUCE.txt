@@ -1,0 +1,65 @@
+# EPN, Fri Jul 10 15:07:37 2015
+#
+
+# NOTE: this procedure relies on the use of rnammer-1.2 which is in my home
+# directory. step4-make-rnammer-qsub-scripts.pl uses a hard-coded path
+# to that executable: '/home/nawrocke/src/rnammer-1.2/rnammer'
+# 
+
+# NOTE: I had to manually modify rnammer slightly to get it to work at
+# NCBI. Notes on that are in:
+# /home/nawrocke/notebook/15_0622_inf_gpipe_ssu_lsu_rfam/00LOG.txt
+
+#
+# Commands are on lines that do not have a '#' as the first character.
+#
+# Step 1: get the CM files necessary for infernal tests:
+sh step1-get-cmfiles.sh 
+
+# Step 2: get the genomes
+# This script randomly selects archaeal and bacterial genomes from 
+# /panfs/pan1.be-md.ncbi.nlm.nih.gov/gpipe/bacterial_pipeline/data19/
+# 
+# This script has to determine which genomes are archaea and which are
+# bacteria. It does so by matching certain strings that are known to 
+# be archaeal specific. The script is deterministic in its choice of 
+# genomes and I manually checked that the resulting genomes are the 
+# correct domain.
+#
+perl step2-get-genomes.pl 
+
+# Step 3: Make a script that will submit the infernal searches, and
+# submit the jobs to the cluster:
+perl step3-make-infernal-qsub-scripts.pl arc.r25.genome.list arc-infernal-out > arc.infernal.sh
+perl step3-make-infernal-qsub-scripts.pl bac.r50.genome.list bac-infernal-out > bac.infernal.sh
+sh arc.infernal.sh
+sh bac.infernal.sh
+
+# Step 4: Make a script that will submit the RNAmmer searches, and
+# submit the jobs to the cluster:
+perl step4-make-rnammer-qsub-scripts.pl arc.r25.genome.list arc-rnammer-out > arc.rnammer.sh
+perl step4-make-rnammer-qsub-scripts.pl bac.r50.genome.list bac-rnammer-out > bac.rnammer.sh
+sh arc.rnammer.sh 
+sh bac.rnammer.sh 
+
+# Step 5: Convert the infernal tblout output to GFF format:
+ls arc-infernal-out/*.tbl | perl step5-wrapper-convert-infernal-to-gff.pl 
+ls bac-infernal-out/*.tbl | perl step5-wrapper-convert-infernal-to-gff.pl 
+
+# Step 6: Obtain NCBI rRNA GFF annotations:
+perl step6-get-ncbi-annotations.pl arc.r25.genome.list arc-ncbi-annot
+perl step6-get-ncbi-annotations.pl bac.r50.genome.list bac-ncbi-annot
+
+# Step 7: Concatenate GFF annotations so we can easily compare all
+# genomes at once:
+sh step7-concatenate-gff.sh 
+
+# Step 8: Perform all of the comparisons:
+sh step8-wrapper-compare-gff.sh
+# comparison output files are in comparison-output-files/ dir
+
+# Step 9: Create final summary:
+sh step9-wrapper-summarize-all-comparisons.sh > comparison-summary.txt
+cat comparison-summary.txt
+# The final summary is in comparison-summary.txt
+
